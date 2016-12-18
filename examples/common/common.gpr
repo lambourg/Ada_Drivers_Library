@@ -16,25 +16,6 @@ project Common is
    for Target use "arm-eabi";
    for Source_Dirs use ("gui");
 
-   case RTS is
-      when "ravenscar-sfp" =>
-         for Source_Dirs use Project'Source_Dirs & ("lch_sfp");
-         case LCH is
-            when "led" =>
-               for Source_Dirs use Project'Source_Dirs & ("lch_sfp/led");
-            when "lcd" =>
-               for Source_Dirs use Project'Source_Dirs & ("lch_sfp/lcd");
-         end case;
-      when "ravenscar-full" =>
-         for Source_Dirs use Project'Source_Dirs & ("lch_full");
-         case LCH is
-            when "led" =>
-               for Source_Dirs use Project'Source_Dirs & ("lch_full/led");
-            when "lcd" =>
-               for Source_Dirs use Project'Source_Dirs & ("lch_full/lcd");
-         end case;
-   end case;
-
    package Compiler renames Config.Compiler;
    package Builder renames Config.Builder;
 

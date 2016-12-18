@@ -37,18 +37,22 @@ def gen_project(board, rts):
         cnt += '   RTS : RTS_Type := external("RTS", "default");\n'
         cnt += '\n'
 
-    elif BOARDS[board] is not None:
+    else:
         lower = board.lower()
         cnt += '   Board := "%s";\n\n' % lower
-        if rts is not None:
-            cnt += '   RTS := "%s";\n' % rts
-        elif len(BOARDS[board]) == 1:
-            cnt += '   RTS := "%s";\n' % BOARDS[board][0]
-        else:
-            cnt += '   type RTS_Type is ("%s");\n' % '", "'.join(BOARDS[board])
-            cnt += '   RTS : RTS_Type := external ("RTS", "%s");\n' % \
-                   BOARDS[board][0]
-        cnt += '\n'
+
+        if BOARDS[board] is not None:
+            if rts is not None:
+                cnt += '   RTS := "%s";\n' % rts
+            elif len(BOARDS[board]) == 1:
+                cnt += '   RTS := "%s";\n' % BOARDS[board][0]
+            else:
+                cnt += '   type RTS_Type is ("%s");\n' % \
+                       '", "'.join(BOARDS[board])
+                cnt += '   RTS : RTS_Type := external ("RTS", "%s");\n' % \
+                       BOARDS[board][0]
+            cnt += '\n'
+
     cnt += '   type Build_Type is ("Debug", "Production");\n'
     cnt += '   Build : Build_Type := external ("BUILD", "Production");\n'
     cnt += '\n'
