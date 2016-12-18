@@ -4,6 +4,8 @@ with "../../components/components";
 
 library project Board is
 
+   RTS := external("RTS", "ravenscar-sfp");
+
    for Library_Name use "board";
    for Library_Kind use "static";
    for Library_Dir use "lib/" & Config.Object_Subdir;
@@ -15,6 +17,13 @@ library project Board is
                         "../stm32_common/sdram",
                         "../stm32_common/ltdc",
                         "../stm32_common/dma2d");
+
+   case RTS is
+      when "ravenscar-full" =>
+         for Source_Dirs use Project'Source_Dirs & ("../stm32_common/lch_full");
+      when others =>
+         for Source_Dirs use Project'Source_Dirs & ("../stm32_common/lch_sfp");
+   end case;
 
    package Compiler renames Config.Compiler;
    package Builder renames Config.Builder;

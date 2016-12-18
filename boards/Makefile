@@ -2,6 +2,7 @@ ZFP_BOARDS=microbit
 RAVENSCAR_BOARDS=crazyflie openmv2 stm32f407disco stm32f429disco stm32f469disco stm32f746disco stm32f769disco
 
 all:
+	python ./gen.py
 	for BUILD in Debug Production; do \
 	  echo "native $$BUILD"; \
 	  gprbuild -j0 -P boards.gpr -XBOARD=native -XBUILD=$$BUILD -XRTS=zfp -p; \
