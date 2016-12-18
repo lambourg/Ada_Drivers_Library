@@ -1,5 +1,5 @@
 with "../../boards/openmv2";
-with "../../boards/OpenMV2/config";
+with "../../hal/config";
 
 project OpenMV2_Example is
 

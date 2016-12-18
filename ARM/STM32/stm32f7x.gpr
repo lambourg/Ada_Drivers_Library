@@ -1,4 +1,4 @@
-with "config";
+with "../../hal/config";
 with "../../hal/HAL";
 with "../cortex_m/cortex_m7";
 

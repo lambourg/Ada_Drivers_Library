@@ -1,8 +1,8 @@
-with "../../boards/stm32f407_discovery.gpr";
+with "../../boards/stm32f407disco.gpr";
 
 project Accelerometer extends "../common/common.gpr" is
 
-  for Runtime ("Ada") use STM32F407_Discovery'Runtime ("Ada");
+  for Runtime ("Ada") use STM32F407Disco'Runtime ("Ada");
   for Target use "arm-eabi";
   for Main use ("main.adb");
   for Languages use ("Ada");

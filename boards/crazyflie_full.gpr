@@ -1,19 +1,39 @@
 aggregate library project Crazyflie_Full is
 
-   Build := external ("BUILD", "Debug");
-   for External ("RTS") use "ravenscar-full";
+   Board := "crazyflie";
 
-   RTS_Base := Project'Project_Dir &
-               "../embedded-runtimes/ravenscar-stm32f407disco";
-   for Target use "arm-eabi";
+   RTS := "ravenscar-full";
 
-   for Runtime ("Ada") use RTS_Base & "/full";
+   type Build_Type is ("Debug", "Production");
+   Build : Build_Type := external ("BUILD", "Production");
 
-   for Project_Path use ("crazyflie");
+   case Board is
+      when "native" =>
+      when others =>
+         for Target use "arm-eabi";
+   end case;
 
-   for Project_Files use ("crazyflie/board.gpr");
+   case Board is
+      when "native" =>
+      when "crazyflie" | "stm32f407disco" =>
+         for Runtime ("Ada") use RTS & "-stm32f4";
+      when others =>
+         for Runtime ("Ada") use RTS & "-" & Board;
+   end case;
 
-   for Library_Dir use "lib/crazyflie/ravenscar-full/" & Build;
-   for Library_Name use "crazyflie";
+   Obj_Suffix := "";
+   case Board is
+      when "native" =>
+         Obj_Suffix := "native-" & Build;
+      when others =>
+         Obj_Suffix := RTS & "-" & Board & "-" & Build;
+   end case;
+
+   for Library_Name use Board;
+   for Library_Dir use "lib/" & Obj_Suffix;
+
+   for external ("Obj_Suffix") use Obj_Suffix;
+   for external ("RTS") use RTS;
+   for Project_Files use (Board & "/board.gpr");
 
 end Crazyflie_Full;

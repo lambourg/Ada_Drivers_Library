@@ -2,7 +2,7 @@
 --  copy of the stm32f42x that doesn't include the "drivers/ltdc" source
 --  directory.
 
-with "config";
+with "../../hal/config";
 with "../../hal/HAL";
 with "../cortex_m/cortex_m4f";
 

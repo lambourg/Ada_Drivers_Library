@@ -1,5 +1,5 @@
 with "../hal/HAL";
-with "config";
+with "../hal/config";
 
 library project Components is
 

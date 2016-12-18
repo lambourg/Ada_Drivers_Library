@@ -1,8 +1,8 @@
-with "../../boards/stm32f469_discovery.gpr";
+with "../../boards/stm32f469disco.gpr";
 
 project Blinky_F469Disco extends "../common/common.gpr" is
 
-  for Runtime ("Ada") use STM32F469_Discovery'Runtime("Ada");
+  for Runtime ("Ada") use STM32F469Disco'Runtime("Ada");
   for Target use "arm-eabi";
   for Main use ("blinky.adb");
   for Languages use ("Ada");

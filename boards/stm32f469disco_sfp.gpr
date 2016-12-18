@@ -1,0 +1,39 @@
+aggregate library project STM32F469Disco_SFP is
+
+   Board := "stm32f469disco";
+
+   RTS := "ravenscar-sfp";
+
+   type Build_Type is ("Debug", "Production");
+   Build : Build_Type := external ("BUILD", "Production");
+
+   case Board is
+      when "native" =>
+      when others =>
+         for Target use "arm-eabi";
+   end case;
+
+   case Board is
+      when "native" =>
+      when "crazyflie" | "stm32f407disco" =>
+         for Runtime ("Ada") use RTS & "-stm32f4";
+      when others =>
+         for Runtime ("Ada") use RTS & "-" & Board;
+   end case;
+
+   Obj_Suffix := "";
+   case Board is
+      when "native" =>
+         Obj_Suffix := "native-" & Build;
+      when others =>
+         Obj_Suffix := RTS & "-" & Board & "-" & Build;
+   end case;
+
+   for Library_Name use Board;
+   for Library_Dir use "lib/" & Obj_Suffix;
+
+   for external ("Obj_Suffix") use Obj_Suffix;
+   for external ("RTS") use RTS;
+   for Project_Files use (Board & "/board.gpr");
+
+end STM32F469Disco_SFP;
