@@ -1,11 +1,3 @@
-# Warning!
-
-This repository uses git submodule, please clone with the --recursive option:
-
-```shell
-git clone --recursive https://github.com/AdaCore/Ada_Drivers_Library.git
-```
-
 1. Introduction
 ---------------
 
@@ -16,7 +8,18 @@ to be a location for both AdaCore and the community in general to contribute
 support for additional processors, platforms, and vendors.
 
 
-2. License
+2. Quick install
+----------------
+
+To use this library, you need:
+
+* an Ada2012 compiler, targeting arm-eabi (for example [GNAT GPL 2016](http://libre.adacore.com/download/configurations#))
+* [run-times](https://github.com/AdaCore/embedded-runtimes) for the target you want to use.
+* please install first the runtimes before using the library
+* try it out with the examples, or with some [demos](https://github.com/lambourg/Ada_Bare_Metal_Demos)
+
+
+3. License
 ----------
 
 The Drivers are provided under a non-restrictive Berkeley Software Distribution
@@ -24,7 +27,7 @@ The Drivers are provided under a non-restrictive Berkeley Software Distribution
 files are available both for proprietary ("commercial") and non-proprietary use.
 
 
-3. Requirements
+4. Requirements
 ---------------
 
 The software is written in Ada 2012 and uses, for example, preconditions,
@@ -63,29 +66,3 @@ either within GPS or on the command-line.
 Not all devices defined by the Reference Manual are supported, and not all those
 supported are complete. We encourage contributions of corrections, enhancements,
 and new drivers.
-
-5. Roadmap
-----------
-
-Here is a list of projects that we are either dreaming about or already working
-on. If you are interested by one of those, please contact us on the projects's
-GitHub page.
-
-* ARM
- * STM32F4/7 USB drivers
-* Components
-* Services
- * Bluetooth Low Energy stack
- * USB stack
-
-6. Project using the Ada_Drivers_Library
-----------------------------------------
-
- * [Certyflie: Ada/SPARK flight controller for the Crazyflie 2.0](https://github.com/AdaCore/Certyflie)
- * [ACNC: A Gcode interpreter and CNC controller](https://github.com/Fabien-Chouteau/ACNC)
- * [AMCQ: Multiple Choice Questions candy dispenser](https://github.com/Fabien-Chouteau/AMCQ)
- * [Giza: Giza is trying to be a simple widget tool kit for embedded platforms](https://github.com/Fabien-Chouteau/Giza)
- * [solenoid-engine-controller: Software controller for solenoid engines](https://github.com/Fabien-Chouteau/solenoid-engine-controller)
- * [un_pola: DIY instant camera with OpenMV](https://github.com/Fabien-Chouteau/un_pola)
- 
-(Add yours to the list!)
