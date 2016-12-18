@@ -1,11 +1,44 @@
+------------------------------------------------------------------------------
+--                                                                          --
+--                     Copyright (C) 2015-2016, AdaCore                     --
+--                                                                          --
+--  Redistribution and use in source and binary forms, with or without      --
+--  modification, are permitted provided that the following conditions are  --
+--  met:                                                                    --
+--     1. Redistributions of source code must retain the above copyright    --
+--        notice, this list of conditions and the following disclaimer.     --
+--     2. Redistributions in binary form must reproduce the above copyright --
+--        notice, this list of conditions and the following disclaimer in   --
+--        the documentation and/or other materials provided with the        --
+--        distribution.                                                     --
+--     3. Neither the name of the copyright holder nor the names of its     --
+--        contributors may be used to endorse or promote products derived   --
+--        from this software without specific prior written permission.     --
+--                                                                          --
+--   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    --
+--   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      --
+--   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR  --
+--   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT   --
+--   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, --
+--   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       --
+--   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,  --
+--   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY  --
+--   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT    --
+--   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE  --
+--   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.   --
+--                                                                          --
+------------------------------------------------------------------------------
+
 with STM32.DCMI;
 with STM32.DMA;     use STM32.DMA;
 with Ada.Real_Time; use Ada.Real_Time;
 with OV2640;        use OV2640;
+with OV7725;        use OV7725;
 with Interfaces;    use Interfaces;
 with HAL.I2C;       use HAL.I2C;
 with HAL.Bitmap;    use HAL.Bitmap;
 with HAL;           use HAL;
+with STM32.PWM;     use STM32.PWM;
 
 package body OpenMV.Sensor is
 
@@ -15,8 +48,10 @@ package body OpenMV.Sensor is
    REG_PID : constant := 16#0A#;
    --  REG_VER : constant := 16#0B#;
 
-   CLK_PWM_Mod : PWM_Modulator;
-   Camera      : OV2640_Cam (Sensor_I2C'Access);
+   CLK_PWM_Mod    : PWM_Modulator;
+   Camera_PID     : HAL.Byte := 0;
+   Camera_2640    : OV2640_Camera (Sensor_I2C'Access);
+   Camera_7725    : OV7725_Camera (Sensor_I2C'Access);
    Is_Initialized : Boolean := False;
 
    -----------------
@@ -41,6 +76,7 @@ package body OpenMV.Sensor is
             Cam_Addr := Addr;
             return True;
          end if;
+         delay until Clock + Milliseconds (1);
       end loop;
       return False;
    end Probe;
@@ -62,14 +98,16 @@ package body OpenMV.Sensor is
 
       procedure Initialize_Clock is
       begin
-         Initialise_PWM_Timer (SENSOR_CLK_TIM,
-                               Float (SENSOR_CLK_FREQ));
+         Initialize_PWM_Modulator
+           (This                => CLK_PWM_Mod,
+            Generator           => SENSOR_CLK_TIM'Access,
+            Frequency           => SENSOR_CLK_FREQ,
+            Configure_Generator => True);
 
-         Attach_PWM_Channel (This      => SENSOR_CLK_TIM'Access,
-                             Modulator => CLK_PWM_Mod,
-                             Channel   => SENSOR_CLK_CHAN,
-                             Point     => SENSOR_CLK_IO,
-                             PWM_AF    => SENSOR_CLK_AF);
+         Attach_PWM_Channel (This    => CLK_PWM_Mod,
+                             Channel => SENSOR_CLK_CHAN,
+                             Point   => SENSOR_CLK_IO,
+                             PWM_AF  => SENSOR_CLK_AF);
 
          Set_Duty_Cycle (This    => CLK_PWM_Mod,
                          Value   => 50);
@@ -84,7 +122,6 @@ package body OpenMV.Sensor is
          Cam_Addr : UInt10;
          Data : I2C_Data (1 .. 1);
          Status : I2C_Status;
-         PID : HAL.Byte;
       begin
 
          --  Power cycle
@@ -103,8 +140,6 @@ package body OpenMV.Sensor is
          if  not Probe (Cam_Addr) then
 
             --  Retry with reversed reset polarity
-            Clear (DCMI_RST);
-            delay until Clock + Milliseconds (10);
             Set (DCMI_RST);
             delay until Clock + Milliseconds (10);
 
@@ -112,6 +147,8 @@ package body OpenMV.Sensor is
                raise Program_Error;
             end if;
          end if;
+
+         delay until Clock + Milliseconds (10);
 
          --  Select sensor bank
          Sensor_I2C.Mem_Write (Addr          => Cam_Addr,
@@ -123,23 +160,40 @@ package body OpenMV.Sensor is
             raise Program_Error;
          end if;
 
-         Sensor_I2C.Mem_Read (Addr          => Cam_Addr,
-                              Mem_Addr      => REG_PID,
-                              Mem_Addr_Size => Memory_Size_8b,
-                              Data          => Data,
-                              Status        => Status);
+         delay until Clock + Milliseconds (10);
+
+         Sensor_I2C.Master_Transmit (Addr    => Cam_Addr,
+                                     Data    => (1 => REG_PID),
+                                     Status  => Status);
          if Status /= Ok then
             raise Program_Error;
          end if;
-         PID := Data (Data'First);
 
-         if PID /= OV2640_PID then
+         Sensor_I2C.Master_Receive (Addr    => Cam_Addr,
+                                    Data    => Data,
+                                    Status  => Status);
+         if Status /= Ok then
             raise Program_Error;
          end if;
 
-         Initialize (Camera, Cam_Addr);
-         Set_Pixel_Format (Camera, Pix_RGB565);
-         Set_Frame_Size (Camera, QQVGA2);
+         if Status /= Ok then
+            raise Program_Error;
+         end if;
+         Camera_PID := Data (Data'First);
+
+         case Camera_PID is
+            when OV2640_PID =>
+               Initialize (Camera_2640, Cam_Addr);
+               Set_Pixel_Format (Camera_2640, Pix_RGB565);
+               Set_Frame_Size (Camera_2640, QQVGA2);
+            when OV7725_PID =>
+               Initialize (Camera_7725, Cam_Addr);
+               Set_Pixel_Format (Camera_7725, Pix_RGB565);
+               Set_Frame_Size (Camera_7725, QQVGA2);
+            when others =>
+               raise Program_Error with "Unknown camera module";
+         end case;
+
       end Initialize_Camera;
 
       -------------------
@@ -178,7 +232,7 @@ package body OpenMV.Sensor is
              Own_Address              => 16#00#,
              Addressing_Mode          => Addressing_Mode_7bit,
              General_Call_Enabled     => False,
-             Clock_Stretching_Enabled => True,
+             Clock_Stretching_Enabled => False,
              Clock_Speed              => 10_000));
 
          Enable_Clock (DCMI_Out_Points);
@@ -202,14 +256,29 @@ package body OpenMV.Sensor is
       ---------------------
 
       procedure Initialize_DCMI is
+         Vertical    : DCMI.DCMI_Polarity;
+         Horizontal  : DCMI.DCMI_Polarity;
+         Pixel_Clock : DCMI.DCMI_Polarity;
       begin
+         case Camera_PID is
+            when OV2640_PID =>
+               Vertical    := DCMI.Active_Low;
+               Horizontal  := DCMI.Active_Low;
+               Pixel_Clock := DCMI.Active_High;
+            when OV7725_PID =>
+               Vertical    := DCMI.Active_High;
+               Horizontal  := DCMI.Active_Low;
+               Pixel_Clock := DCMI.Active_High;
+            when others =>
+               raise Program_Error with "Unknown camera module";
+         end case;
+
          Enable_DCMI_Clock;
          DCMI.Configure (Data_Mode            => DCMI.DCMI_8bit,
                          Capture_Rate         => DCMI.Capture_All,
-                         --  Sensor specific (OV2640)
-                         Vertical_Polarity    => DCMI.Active_Low,
-                         Horizontal_Polarity  => DCMI.Active_Low,
-                         Pixel_Clock_Polarity => DCMI.Active_High,
+                         Vertical_Polarity    => Vertical,
+                         Horizontal_Polarity  => Horizontal,
+                         Pixel_Clock_Polarity => Pixel_Clock,
 
                          Hardware_Sync        => True,
                          JPEG                 => False);
@@ -253,6 +322,8 @@ package body OpenMV.Sensor is
 
    procedure Snapshot (BM : HAL.Bitmap.Bitmap_Buffer'Class) is
       Status : DMA_Error_Code;
+      Cnt : constant Interfaces.Unsigned_16 :=
+        Interfaces.Unsigned_16 ((BM.Width * BM.Height) / 2);
    begin
       if BM.Width /= Image_Width or else BM.Height /= Image_Height then
          raise Program_Error;
@@ -266,24 +337,29 @@ package body OpenMV.Sensor is
          raise Program_Error;
       end if;
 
+      Clear_All_Status (Sensor_DMA, Sensor_DMA_Stream);
+
       Start_Transfer (This        => Sensor_DMA,
                       Stream      => Sensor_DMA_Stream,
                       Source      => DCMI.Data_Register_Address,
                       Destination => BM.Addr,
-                      Data_Count  =>
-                        Interfaces.Unsigned_16 ((BM.Width * BM.Height) / 2));
+                      Data_Count  => Cnt);
 
       DCMI.Start_Capture (DCMI.Snapshot);
 
       Poll_For_Completion (Sensor_DMA,
                            Sensor_DMA_Stream,
                            Full_Transfer,
-                           Milliseconds (1000),
+                           Milliseconds (100),
                            Status);
+
       if Status /= DMA_No_Error then
-         Abort_Transfer (Sensor_DMA, Sensor_DMA_Stream, Status);
-         pragma Unreferenced (Status);
-         raise Program_Error;
+         if Status = DMA_Timeout_Error then
+            raise Program_Error with "DMA timeout! Transferred: " &
+              Items_Transferred (Sensor_DMA, Sensor_DMA_Stream)'Img;
+         else
+            raise Program_Error;
+         end if;
       end if;
    end Snapshot;
 

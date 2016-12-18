@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -81,8 +81,8 @@ private
 
    Emulator_Timer : Timer renames Timer_3;
 
-   Emulator_AF : constant GPIO_Alternate_Function := GPIO_AF_TIM3;
+   Emulator_AF : constant STM32.GPIO_Alternate_Function := GPIO_AF_2_TIM3;
 
-   Emulator_Period : constant Word := ((System_Clock_Frequencies.SYSCLK / 4) / 10000) - 1;
+   Emulator_Period : constant UInt32 := ((System_Clock_Frequencies.SYSCLK / 4) / 10000) - 1;
 
 end Encoder_Emulator;

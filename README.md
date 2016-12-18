@@ -22,10 +22,11 @@ To use this library, you need:
 3. License
 ----------
 
-The Drivers are provided under a non-restrictive Berkeley Software Distribution
-(BSD) license.  As such, and within the conditions required by the license, the
-files are available both for proprietary ("commercial") and non-proprietary use.
+All files are provided under a 3-clause Berkeley Software Distribution (BSD)
+license. As such, and within the conditions required by the license, the files
+are available both for proprietary ("commercial") and non-proprietary use.
 
+For details, see the "LICENSE" file in the root directory.
 
 4. Requirements
 ---------------
@@ -47,22 +48,3 @@ here)](http://libre.adacore.com/download/configurations). A recent GNAT Pro
 compiler for that target will also suffice.
 
 
-4. Content
-----------
-
-Initial provision is for the hardware in the STM32-discovery family of 32-bit
-Boards, namely the STM32F407-disco, F429, F469, F746 and F769.
-
-Specifically, there are low-level device drivers, higher-level component drivers,
-small demonstration programs for the drivers, and larger example applications.
-"Component" drivers are those that are implemented using the lower-level device
-drivers (e.g., SPI or GPIO), such as the gyroscope and accelerometer on the
-Discovery boards.
-
-The small driver demonstration programs and the larger applications programs are
-provided as full projects, including GNAT project files, and are ready to build
-either within GPS or on the command-line.
-
-Not all devices defined by the Reference Manual are supported, and not all those
-supported are complete. We encourage contributions of corrections, enhancements,
-and new drivers.

@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -35,10 +35,11 @@
 
 --  This file declares the main procedure for the demonstration.
 
---  We use the STM F4 Discovery board for the sake of the four LEDs but another board could be
---  used, with different LED configurations. Using a board with fewer LEDs is
---  possible but less interesting. In that case, change the number of channels
---  driven (and interrupts generated) to match the number of LEDs available.
+--  We use the STM F4 Discovery board for the sake of the four LEDs but another
+--  board could be used, with different LED configurations. Using a board
+--  with fewer LEDs is possible but less interesting. In that case, change the
+--  number of channels driven (and interrupts generated) to match the number of
+--  LEDs available.
 
 with Last_Chance_Handler;      pragma Unreferenced (Last_Chance_Handler);
 
@@ -61,7 +62,7 @@ begin
    Configure
      (Timer_3,
       Prescaler     => Prescaler,
-      Period        => Word (Short'Last),  -- all the way up
+      Period        => UInt32 (UInt16'Last),  -- all the way up
       Clock_Divisor => Div1,
       Counter_Mode  => Up);
 

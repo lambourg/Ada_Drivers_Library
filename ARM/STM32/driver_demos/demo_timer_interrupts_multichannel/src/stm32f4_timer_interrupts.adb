@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -45,12 +45,12 @@ package body STM32F4_Timer_Interrupts is
       -----------------
 
       procedure IRQ_Handler is
-         Current : Short;
+         Current : UInt16;
       begin
          if Status (Timer_3, Timer_CC1_Indicated) then
             Clear_Pending_Interrupt (Timer_3, Timer_CC1_Interrupt);
 
-            Toggle (Blue);
+            Blue.Toggle;
 
             Current := Current_Capture_Value (Timer_3, Channel_1);
             Set_Compare_Value (Timer_3, Channel_1, Current + Channel_1_Period);
@@ -59,7 +59,7 @@ package body STM32F4_Timer_Interrupts is
          if Status (Timer_3, Timer_CC2_Indicated) then
             Clear_Pending_Interrupt (Timer_3, Timer_CC2_Interrupt);
 
-            Toggle (Green);
+            Green.Toggle;
 
             Current := Current_Capture_Value (Timer_3, Channel_2);
             Set_Compare_Value (Timer_3, Channel_2, Current + Channel_2_Period);
@@ -68,7 +68,7 @@ package body STM32F4_Timer_Interrupts is
          if Status (Timer_3, Timer_CC3_Indicated) then
             Clear_Pending_Interrupt (Timer_3, Timer_CC3_Interrupt);
 
-            Toggle (Orange);
+            Orange.Toggle;
 
             Current := Current_Capture_Value (Timer_3, Channel_3);
             Set_Compare_Value (Timer_3, Channel_3, Current + Channel_3_Period);
@@ -77,7 +77,7 @@ package body STM32F4_Timer_Interrupts is
          if Status (Timer_3, Timer_CC4_Indicated) then
             Clear_Pending_Interrupt (Timer_3, Timer_CC4_Interrupt);
 
-            Toggle (Red);
+            Red.Toggle;
 
             Current := Current_Capture_Value (Timer_3, Channel_4);
             Set_Compare_Value (Timer_3, Channel_4, Current + Channel_4_Period);

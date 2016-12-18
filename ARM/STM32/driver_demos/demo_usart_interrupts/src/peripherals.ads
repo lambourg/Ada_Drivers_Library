@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -45,7 +45,7 @@ package Peripherals is
 
    Transceiver_Interrupt_Id : constant Interrupt_ID := USART1_Interrupt;
 
-   Transceiver_AF : constant GPIO_Alternate_Function := GPIO_AF_USART1;
+   Transceiver_AF : constant STM32.GPIO_Alternate_Function := GPIO_AF_7_USART1;
 
    COM : Serial_Port.Controller (Transceiver'Access, Transceiver_Interrupt_Id);
 

@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -47,19 +47,19 @@ with LCD_Std_Out;
 
 procedure Demo_ADC_VRef_Polling is
 
-   Raw     : Word;
-   VRefInt : Word;
+   Raw     : UInt32;
+   VRefInt : UInt32;
 
    Successful : Boolean;
    Timed_Out  : exception;
 
-   procedure Print (X, Y : Natural; Value : Word; Suffix : String := "");
+   procedure Print (X, Y : Natural; Value : UInt32; Suffix : String := "");
 
    -----------
    -- Print --
    -----------
 
-   procedure Print (X, Y : Natural; Value : Word; Suffix : String := "") is
+   procedure Print (X, Y : Natural; Value : UInt32; Suffix : String := "") is
       Value_Image : constant String := Value'Img;
    begin
       LCD_Std_Out.Put (X, Y, Value_Image (2 .. Value_Image'Last) & Suffix & "   ");
@@ -100,13 +100,13 @@ begin
          raise Timed_Out;
       end if;
 
-      Raw := Word (Conversion_Value (ADC_1));
+      Raw := UInt32 (Conversion_Value (ADC_1));
       Print (0, 0, Raw);
 
-      VRefInt := Word ((Float (Raw) / 4096.0) * Float (ADC_Supply_Voltage));
+      VRefInt := UInt32 ((Float (Raw) / 4096.0) * Float (ADC_Supply_Voltage));
 
       Print (0, 24, VRefInt, "mv");
 
-      Toggle (Green);
+      Green.Toggle;
    end loop;
 end Demo_ADC_VRef_Polling;

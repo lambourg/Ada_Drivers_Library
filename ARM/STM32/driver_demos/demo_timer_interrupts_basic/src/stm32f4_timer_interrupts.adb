@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -51,7 +51,7 @@ package body STM32F4_Timer_Interrupts is
          if Status (Timer_7, Timer_Update_Indicated) then
             if Interrupt_Enabled (Timer_7, Timer_Update_Interrupt) then
                Clear_Pending_Interrupt (Timer_7, Timer_Update_Interrupt);
-               Toggle (Green);
+               Green.Toggle;
             end if;
          end if;
       end IRQ_Handler;

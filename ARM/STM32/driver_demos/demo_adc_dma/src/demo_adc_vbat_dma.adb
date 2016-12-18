@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -33,9 +33,7 @@
 --  an ADC unit, using DMA.
 
 --  The programs displays the battery voltage value so it assumes a display of
---  some sort (i.e., LCD_Std_Out).
-
---  Note that you will likely need to reset the board manually after loading.
+--  some sort.
 
 with Ada.Real_Time; use Ada.Real_Time;
 with Interfaces;    use Interfaces;
@@ -58,10 +56,10 @@ procedure Demo_ADC_VBat_DMA is
 
    Stream : constant DMA_Stream_Selector := Stream_0;
 
-   Counts  : Short;
-   Voltage : Word;  -- in millivolts
+   Counts  : UInt16;
+   Voltage : UInt32;  -- in millivolts
 
-   procedure Print (X, Y : Natural; Value : Word; Suffix : String := "");
+   procedure Print (X, Y : Natural; Value : UInt32; Suffix : String := "");
 
    procedure Initialize_DMA;
    procedure Initialize_ADC;
@@ -70,7 +68,7 @@ procedure Demo_ADC_VBat_DMA is
    -- Print --
    -----------
 
-   procedure Print (X, Y : Natural; Value : Word; Suffix : String := "") is
+   procedure Print (X, Y : Natural; Value : UInt32; Suffix : String := "") is
       Value_Image : constant String := Value'Img;
    begin
       LCD_Std_Out.Put (X, Y, Value_Image (2 .. Value_Image'Last) & Suffix & "   ");
@@ -158,7 +156,7 @@ begin
       Data_Count  => 1);  -- ie, 1 halfword
 
    loop
-      Voltage := Word (Counts);
+      Voltage := UInt32 (Counts);
 
       Print (0, 0, Voltage);
 
@@ -167,7 +165,7 @@ begin
 
       Print (0, 24, Voltage, "mv");
 
-      Toggle (Green);
+      Green.Toggle;
 
       delay until Clock + Milliseconds (200);
       --  slow it down a little for easier viewing

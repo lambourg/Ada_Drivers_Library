@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -52,7 +52,12 @@ procedure Demo_LIS3DSH_Tilt is
 
    Threshold : constant := 100;  -- arbitrary
 
-   procedure Panic;
+   procedure Panic with No_Return;
+   --  indicate that there is a fatal problem (accelerometer not found)
+
+   -----------
+   -- Panic --
+   -----------
 
    procedure Panic is
    begin
@@ -67,9 +72,6 @@ procedure Demo_LIS3DSH_Tilt is
 begin
    Initialize_LEDs;
    All_LEDs_Off;
-
-   --  short delay on power up
-   delay until Clock + Milliseconds (10);
 
    Initialize_Accelerometer;
 

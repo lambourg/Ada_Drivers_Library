@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -66,10 +66,9 @@ package STM32.Board is
    procedure Initialize_LEDs;
    --  MUST be called prior to any use of the LEDs
 
-   procedure Turn_On (This : in out User_LED)
-     renames STM32.GPIO.Set;
-   procedure Turn_Off (This : in out User_LED)
-     renames STM32.GPIO.Clear;
+   procedure Turn_On  (This : in out User_LED) renames STM32.GPIO.Set;
+   procedure Turn_Off (This : in out User_LED) renames STM32.GPIO.Clear;
+   procedure Toggle   (This : in out User_LED) renames STM32.GPIO.Toggle;
 
    procedure All_LEDs_Off with Inline;
    procedure All_LEDs_On  with Inline;

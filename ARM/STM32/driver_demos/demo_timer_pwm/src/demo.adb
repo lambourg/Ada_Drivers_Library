@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                    Copyright (C) 2015, AdaCore                           --
+--                 Copyright (C) 2015-2016, AdaCore                         --
 --                                                                          --
 --  Redistribution and use in source and binary forms, with or without      --
 --  modification, are permitted provided that the following conditions are  --
@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -29,11 +29,11 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This demonstration illustrates the use of PWM to control the brightness of
---  an LED. The effect is to make the LED increase and decrease in brightness,
---  iteratively, for as long as the application runs. In effect the LED light
---  waxes and wanes. See http://visualgdb.com/tutorials/arm/stm32/fpu/ for the
---  inspiration.
+--  This demonstration illustrates the use of a timer to control
+--  the brightness of an LED. The point is to make the LED increase
+--  and decrease in brightness, iteratively, for as long as the
+--  application runs. In effect the LED light waxes and wanes.
+--  See http://visualgdb.com/tutorials/arm/stm32/fpu/ for the inspiration.
 --
 --  The demo uses the timer directly to achieve the effect of
 --  pulse-width-modulation, but note that there is a PWM package that does
@@ -48,11 +48,11 @@ with HAL;          use HAL;
 with STM32.GPIO;   use STM32.GPIO;
 with STM32.Timers; use STM32.Timers;
 
-procedure Demo is
+procedure Demo is -- low-level demo of the PWM capabilities of the timers
 
    Period : constant := 1000;
 
-   Output_Channel : constant Timer_Channel := Channel_1;
+   Output_Channel : constant Timer_Channel := Channel_2;
    --  The LED driven by this example is determined by the channel selected.
    --  That is so because each channel of Timer_4 is connected to a specific
    --  LED in the alternate function configuration on this board. We will
@@ -143,7 +143,7 @@ begin
 
    Set_Autoreload_Preload (Timer_4, True);
 
-   Configure_Alternate_Function (All_LEDs, AF => GPIO_AF_TIM4);
+   Configure_Alternate_Function (All_LEDs, AF => GPIO_AF_2_TIM4);
    --  Note we configured the LEDs to be in the AF mode in Configure_LEDs
 
    Enable_Channel (Timer_4, Output_Channel);
@@ -153,14 +153,14 @@ begin
    declare
       use STM32;
       Arg       : Long_Float := 0.0;
-      Pulse     : Short;
+      Pulse     : UInt16;
       Increment : constant Long_Float := 0.00003;
       --  The Increment value controls the rate at which the brightness
       --  increases and decreases. The value is more or less arbitrary, but
       --  note that the effect of optimization is observable.
    begin
       loop
-         Pulse := Short (Long_Float (Period / 2) * (1.0 + Sine (Arg)));
+         Pulse := UInt16 (Long_Float (Period / 2) * (1.0 + Sine (Arg)));
          Set_Compare_Value (Timer_4, Output_Channel, Pulse);
          Arg := Arg + Increment;
       end loop;

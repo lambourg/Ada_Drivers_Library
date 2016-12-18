@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -47,6 +47,7 @@ with STM32.SDMMC;       use STM32.SDMMC;
 with STM32.SPI;         use STM32.SPI;
 with STM32.Timers;      use STM32.Timers;
 with STM32.USARTs;      use STM32.USARTs;
+with STM32.RTC;         use STM32.RTC;
 
 package STM32.Device is
    pragma Elaborate_Body;
@@ -560,6 +561,8 @@ package STM32.Device is
 
    procedure Enable_DCMI_Clock;
    procedure Reset_DCMI;
+
+   RTC : aliased RTC_Device;
 
 private
 

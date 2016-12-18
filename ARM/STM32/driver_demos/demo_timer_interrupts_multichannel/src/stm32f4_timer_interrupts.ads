@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -55,9 +55,9 @@ package STM32F4_Timer_Interrupts is
    --  with the channels). By controlling the rates at which the channels
    --  generate the interrupts we control the rates at which the LEDs blink.
 
-   SystemCoreClock : constant Word := System_Clock_Frequencies.SYSCLK;
+   SystemCoreClock : constant UInt32 := System_Clock_Frequencies.SYSCLK;
 
-   Prescaler : constant Short := Short (((SystemCoreClock / 2) / 6000) - 1);
+   Prescaler : constant UInt16 := UInt16 (((SystemCoreClock / 2) / 6000) - 1);
 
    Channel_1_Period : constant := 6000 - 1;                          -- 1 sec
    Channel_2_Period : constant := ((Channel_1_Period + 1) / 2) - 1;  -- 1/2 sec
@@ -66,7 +66,7 @@ package STM32F4_Timer_Interrupts is
 
    --  A convenience array for the sake of using a loop to configure the timer
    --  channels
-   Channel_Periods  : constant array (Timer_Channel) of Word :=
+   Channel_Periods  : constant array (Timer_Channel) of UInt32 :=
      (Channel_1_Period,
       Channel_2_Period,
       Channel_3_Period,

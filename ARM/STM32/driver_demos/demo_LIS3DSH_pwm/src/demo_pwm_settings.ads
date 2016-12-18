@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -37,13 +37,16 @@ with STM32.PWM;       use STM32.PWM;
 
 package Demo_PWM_Settings is
 
-   PWM_Output : aliased PWM_Modulator;
+   PWM_Output_Green  : aliased PWM_Modulator;
+   PWM_Output_Orange : aliased PWM_Modulator;
+   PWM_Output_Red    : aliased PWM_Modulator;
+   PWM_Output_Blue   : aliased PWM_Modulator;
 
    PWM_Output_Timer : Timer renames Timer_4;
 
-   PWM_Output_AF : constant GPIO_Alternate_Function := GPIO_AF_TIM4;
+   PWM_Output_AF : constant STM32.GPIO_Alternate_Function := GPIO_AF_2_TIM4;
 
-   PWM_Frequency : constant := 10_000.0;  -- arbitrary
+   PWM_Frequency : constant := 10_000;  -- arbitrary
 
    --  On Timer 4 the channels are connected as follows:
    --

@@ -1,3 +1,34 @@
+------------------------------------------------------------------------------
+--                                                                          --
+--                     Copyright (C) 2015-2016, AdaCore                     --
+--                                                                          --
+--  Redistribution and use in source and binary forms, with or without      --
+--  modification, are permitted provided that the following conditions are  --
+--  met:                                                                    --
+--     1. Redistributions of source code must retain the above copyright    --
+--        notice, this list of conditions and the following disclaimer.     --
+--     2. Redistributions in binary form must reproduce the above copyright --
+--        notice, this list of conditions and the following disclaimer in   --
+--        the documentation and/or other materials provided with the        --
+--        distribution.                                                     --
+--     3. Neither the name of the copyright holder nor the names of its     --
+--        contributors may be used to endorse or promote products derived   --
+--        from this software without specific prior written permission.     --
+--                                                                          --
+--   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    --
+--   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      --
+--   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR  --
+--   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT   --
+--   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, --
+--   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       --
+--   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,  --
+--   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY  --
+--   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT    --
+--   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE  --
+--   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.   --
+--                                                                          --
+------------------------------------------------------------------------------
+
 --  Based on ov2640.c from OpenMV
 --
 --  This file is part of the OpenMV project.
@@ -212,17 +243,17 @@ package body OV2640 is
       (16#00#,     16#00#)
      );
 
-   procedure Write (This : OV2640_Cam; Addr, Data : Byte);
-   function Read (This : OV2640_Cam; Addr : Byte) return Byte;
-   procedure Select_Sensor_Bank (This : OV2640_Cam);
-   procedure Select_DSP_Bank (This : OV2640_Cam);
-   procedure Enable_DSP (This : OV2640_Cam; Enable : Boolean);
+   procedure Write (This : OV2640_Camera; Addr, Data : Byte);
+   function Read (This : OV2640_Camera; Addr : Byte) return Byte;
+   procedure Select_Sensor_Bank (This : OV2640_Camera);
+   procedure Select_DSP_Bank (This : OV2640_Camera);
+   procedure Enable_DSP (This : OV2640_Camera; Enable : Boolean);
 
    -----------
    -- Write --
    -----------
 
-   procedure Write (This : OV2640_Cam; Addr, Data : Byte) is
+   procedure Write (This : OV2640_Camera; Addr, Data : Byte) is
       Status : I2C_Status;
    begin
       This.I2C.Mem_Write (Addr          => This.Addr,
@@ -239,7 +270,7 @@ package body OV2640 is
    -- Read --
    ----------
 
-   function Read (This : OV2640_Cam; Addr : Byte) return Byte is
+   function Read (This : OV2640_Camera; Addr : Byte) return Byte is
       Data : I2C_Data (1 .. 1);
       Status : I2C_Status;
    begin
@@ -258,7 +289,7 @@ package body OV2640 is
    -- Select_Sensor_Bank --
    ------------------------
 
-   procedure Select_Sensor_Bank (This : OV2640_Cam) is
+   procedure Select_Sensor_Bank (This : OV2640_Camera) is
    begin
       Write (This, REG_BANK_SELECT, 1);
    end Select_Sensor_Bank;
@@ -267,7 +298,7 @@ package body OV2640 is
    -- Select_DSP_Bank --
    ---------------------
 
-   procedure Select_DSP_Bank (This : OV2640_Cam) is
+   procedure Select_DSP_Bank (This : OV2640_Camera) is
    begin
       Write (This, REG_BANK_SELECT, 0);
    end Select_DSP_Bank;
@@ -276,7 +307,7 @@ package body OV2640 is
    -- Enable_DSP --
    ----------------
 
-   procedure Enable_DSP (This : OV2640_Cam; Enable : Boolean) is
+   procedure Enable_DSP (This : OV2640_Camera; Enable : Boolean) is
    begin
       Select_DSP_Bank (This);
       Write (This, REG_DSP_BYPASS, (if Enable then 0 else 1));
@@ -287,7 +318,7 @@ package body OV2640 is
    ----------------
 
    procedure Initialize
-     (This : in out OV2640_Cam;
+     (This : in out OV2640_Camera;
       Addr : UInt10)
    is
    begin
@@ -303,7 +334,7 @@ package body OV2640 is
    ----------------------
 
    procedure Set_Pixel_Format
-     (This : OV2640_Cam;
+     (This : OV2640_Camera;
       Pix : Pixel_Format)
    is
    begin
@@ -328,7 +359,7 @@ package body OV2640 is
    --------------------
 
    procedure Set_Frame_Size
-     (This : OV2640_Cam;
+     (This : OV2640_Camera;
       Res  : Frame_Size)
    is
       H_SIZE, V_SIZE : Bit_Field (0 .. 15);
@@ -443,7 +474,7 @@ package body OV2640 is
    --------------------
 
    procedure Set_Frame_Rate
-     (This : OV2640_Cam;
+     (This : OV2640_Camera;
       FR  : Frame_Rate)
    is
    begin
@@ -454,7 +485,7 @@ package body OV2640 is
    -- Get_PID --
    -------------
 
-   function Get_PID (This : OV2640_Cam) return Byte is
+   function Get_PID (This : OV2640_Camera) return Byte is
    begin
       Select_Sensor_Bank (This);
       return Read (This, REG_SENSOR_PID);
@@ -464,7 +495,7 @@ package body OV2640 is
    -- Enable_Auto_Gain_Control --
    ------------------------------
 
-   procedure Enable_Auto_Gain_Control (This   : OV2640_Cam;
+   procedure Enable_Auto_Gain_Control (This   : OV2640_Camera;
                                        Enable : Boolean := True)
    is
       COM8 : Byte;
@@ -484,7 +515,7 @@ package body OV2640 is
    -- Enable_Auto_White_Balance --
    -------------------------------
 
-   procedure Enable_Auto_White_Balance (This   : OV2640_Cam;
+   procedure Enable_Auto_White_Balance (This   : OV2640_Camera;
                                         Enable : Boolean := True)
    is
       CTRL1 : Byte;
@@ -504,7 +535,7 @@ package body OV2640 is
    -- Enable_Auto_Exposure_Control --
    ----------------------------------
 
-   procedure Enable_Auto_Exposure_Control (This   : OV2640_Cam;
+   procedure Enable_Auto_Exposure_Control (This   : OV2640_Camera;
                                            Enable : Boolean := True)
    is
       CTRL0 : Byte;
@@ -524,7 +555,7 @@ package body OV2640 is
    -- Enable_Auto_Band_Filter --
    -----------------------------
 
-   procedure Enable_Auto_Band_Filter (This   : OV2640_Cam;
+   procedure Enable_Auto_Band_Filter (This   : OV2640_Camera;
                                       Enable : Boolean := True)
    is
       COM8 : Byte;

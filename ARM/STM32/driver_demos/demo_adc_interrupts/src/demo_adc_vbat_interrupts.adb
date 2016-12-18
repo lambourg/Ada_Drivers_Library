@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -54,16 +54,16 @@ procedure Demo_ADC_VBat_Interrupts is
    All_Regular_Conversions : constant Regular_Channel_Conversions :=
       (1 => (Channel => VBat.Channel, Sample_Time => Sample_15_Cycles));
 
-   Counts  : Word;
-   Voltage : Word;  -- in millivolts
+   Counts  : UInt32;
+   Voltage : UInt32;  -- in millivolts
 
-   procedure Print (X, Y : Natural; Value : Word; Suffix : String := "");
+   procedure Print (X, Y : Natural; Value : UInt32; Suffix : String := "");
 
    -----------
    -- Print --
    -----------
 
-   procedure Print (X, Y : Natural; Value : Word; Suffix : String := "") is
+   procedure Print (X, Y : Natural; Value : UInt32; Suffix : String := "") is
       Value_Image : constant String := Value'Img;
    begin
       LCD_Std_Out.Put (X, Y, Value_Image (2 .. Value_Image'Last) & Suffix & "   ");
@@ -101,7 +101,7 @@ begin
 
       Suspend_Until_True (ADC_Interrupt_Handling.Regular_Channel_EOC);
 
-      Counts := Word (Conversion_Value (VBat.ADC.all));
+      Counts := UInt32 (Conversion_Value (VBat.ADC.all));
 
       Print (0, 0, Counts);
 
@@ -110,6 +110,6 @@ begin
 
       Print (0, 24, Voltage, "mv");
 
-      Toggle (Green);
+      Green.Toggle;
    end loop;
 end Demo_ADC_VBat_Interrupts;

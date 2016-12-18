@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -50,7 +50,7 @@ package body Motor is
    -- Encoder_Count --
    -------------------
 
-   function Encoder_Count return Word is
+   function Encoder_Count return UInt32 is
    begin
       return Current_Counter (Encoder_Timer);
    end Encoder_Count;
@@ -87,7 +87,7 @@ package body Motor is
       Configure
         (Encoder_Timer,
          Prescaler     => 0,
-         Period        => Word (Short'Last),
+         Period        => UInt32 (UInt16'Last),
          Clock_Divisor => Div1,
          Counter_Mode  => Up);
 
@@ -110,7 +110,7 @@ package body Motor is
       Enable_Channel (Encoder_Timer, Channel_1);
       Enable_Channel (Encoder_Timer, Channel_2);
 
-      Set_Counter (Encoder_Timer, Short'(0));
+      Set_Counter (Encoder_Timer, UInt16'(0));
 
       Enable (Encoder_Timer);
    end Initialize;

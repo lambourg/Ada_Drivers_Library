@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -50,7 +50,7 @@ with HAL;                use HAL;
 package Motor is
    pragma Elaborate_Body;
 
-   function Encoder_Count return Word;
+   function Encoder_Count return UInt32;
 
    type Direction is (Forward, Backward);
 
@@ -63,6 +63,6 @@ private
 
    Encoder_Timer : Timer renames Timer_1;
 
-   Encoder_AF : constant GPIO_Alternate_Function := GPIO_AF_TIM1;
+   Encoder_AF : constant STM32.GPIO_Alternate_Function := GPIO_AF_1_TIM1;
 
 end Motor;
