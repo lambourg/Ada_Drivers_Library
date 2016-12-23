@@ -30,6 +30,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Real_Time;   use Ada.Real_Time;
+with Ada.Unchecked_Conversion;
 pragma Warnings (Off, "* is an internal GNAT unit*");
 with System.BB.Parameters;
 pragma Warnings (On, "* is an internal GNAT unit*");
@@ -251,5 +252,17 @@ package body STM32.SDRAM is
       return Ret;
    end Reserve;
 
+   --------------
+   -- Rollback --
+   --------------
+
+   procedure Rollback
+     (Addr : System.Address)
+   is
+      function To_U32 is new Ada.Unchecked_Conversion
+        (System.Address, UInt32);
+   begin
+      G_Base_Addr := To_U32 (Addr);
+   end Rollback;
 
 end STM32.SDRAM;
