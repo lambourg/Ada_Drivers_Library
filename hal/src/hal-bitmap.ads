@@ -265,9 +265,9 @@ package HAL.Bitmap is
    Dark_Salmon         : constant Bitmap_Color := (255, 233, 150, 122);
    Salmon              : constant Bitmap_Color := (255, 250, 128, 114);
    Light_Salmon        : constant Bitmap_Color := (255, 255, 160, 122);
-   Dark_Orange         : constant Bitmap_Color := (255, 255, 140, 000);
-   Orange              : constant Bitmap_Color := (255, 255, 165, 000);
-   Light_Orange        : constant Bitmap_Color := (255, 255, 069, 000);
+   Orange              : constant Bitmap_Color := (255, 255, 140, 000);
+   Light_Orange        : constant Bitmap_Color := (255, 255, 165, 000);
+   Dark_Orange         : constant Bitmap_Color := (255, 255, 069, 000);
    Gold                : constant Bitmap_Color := (255, 255, 215, 000);
    Dark_Golden_Rod     : constant Bitmap_Color := (255, 184, 134, 011);
    Golden_Rod          : constant Bitmap_Color := (255, 218, 165, 032);

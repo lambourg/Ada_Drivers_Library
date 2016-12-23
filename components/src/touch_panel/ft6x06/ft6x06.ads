@@ -36,21 +36,30 @@ with Interfaces; use Interfaces;
 with HAL;        use HAL;
 with HAL.I2C;    use HAL.I2C;
 with HAL.Touch_Panel;
+with HAL.Time;
 
 package FT6x06 is
 
    type FT6x06_Device (Port     : not null I2C_Port_Ref;
-                       I2C_Addr : I2C_Address) is
-     limited new HAL.Touch_Panel.Touch_Panel_Device with private;
+                       I2C_Addr : I2C_Address;
+                       Time     : not null HAL.Time.Delays_Ref) is
+   limited new HAL.Touch_Panel.Touch_Panel_Device with private;
 
    function Check_Id (This : in out FT6x06_Device) return Boolean;
    --  Check the device Id: returns true on a FT5336 touch panel, False is
    --  none is found.
 
-   procedure TP_Set_Use_Interrupts (This : in out FT6x06_Device;
-                                    Enabled : Boolean);
-   --  Whether the touch panel uses interrupts of polling to process touch
+   function Calibrate (This : in out FT6x06_Device) return Boolean;
+
+   procedure Set_Use_Interrupts (This : in out FT6x06_Device;
+                                 Enabled : Boolean);
+   --  Whether the touch panel uses interrupts or polling to process touch
    --  information
+
+   procedure Set_Update_Rate
+     (This         : in out FT6x06_Device;
+      Active_Rate  : Byte := 60;
+      Monitor_Rate : Byte := 60);
 
    overriding
    procedure Set_Bounds (This   : in out FT6x06_Device;
@@ -80,22 +89,32 @@ package FT6x06 is
 private
 
    type FT6x06_Device (Port     : not null I2C_Port_Ref;
-                       I2C_Addr : I2C_Address) is
+                       I2C_Addr : I2C_Address;
+                       Time     : not null HAL.Time.Delays_Ref) is
      limited new HAL.Touch_Panel.Touch_Panel_Device with record
       LCD_Natural_Width  : Natural := 0;
       LCD_Natural_Height : Natural := 0;
       Swap               : HAL.Touch_Panel.Swap_State := 0;
    end record;
 
-   function I2C_Read (This   : in out FT6x06_Device;
-                      Reg    : Byte;
-                      Status : out Boolean)
-                      return Byte;
+   function I2C_Read
+     (This   : in out FT6x06_Device;
+      Reg    : Byte;
+      Status : out Boolean)
+      return Byte;
 
-   procedure I2C_Write (This   : in out FT6x06_Device;
-                        Reg    : Byte;
-                        Data   : Byte;
-                        Status : out Boolean);
+   procedure I2C_Read
+     (This   : in out FT6x06_Device;
+      Reg    : Byte;
+      Values : out HAL.Byte_Array;
+      Status : out Boolean);
+
+   procedure I2C_Write
+     (This   : in out FT6x06_Device;
+      Reg    : Byte;
+      Data   : Byte;
+      Status : out Boolean);
+
    ------------------------------------------------------------
    -- Definitions for FT6206 I2C register addresses on 8 bit --
    ------------------------------------------------------------
@@ -105,10 +124,9 @@ private
 
    --  Possible values of FT6206_DEV_MODE_REG
    FT6206_DEV_MODE_WORKING             : constant Unsigned_8 := 16#00#;
-   FT6206_DEV_MODE_FACTORY             : constant Unsigned_8 := 16#04#;
+   FT6206_DEV_MODE_FACTORY             : constant Unsigned_8 := 16#40#;
 
-   FT6206_DEV_MODE_MASK                : constant Unsigned_8 := 16#07#;
-   FT6206_DEV_MODE_SHIFT               : constant Unsigned_8 := 16#04#;
+   FT6206_DEV_MODE_MASK                : constant Unsigned_8 := 16#70#;
 
    --  Gesture ID register
    FT6206_GEST_ID_REG                  : constant Unsigned_8 := 16#01#;

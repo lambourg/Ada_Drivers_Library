@@ -351,7 +351,7 @@ package body STMPE811 is
 
       --  Check Touch detected bit in CTRL register
       if Touch_Id /= 1 or else This.Active_Touch_Points = 0 then
-         return (0, 0, 0);
+         return Null_Touch_State;
       end if;
 
       declare
@@ -389,7 +389,7 @@ package body STMPE811 is
       --  sometimes it reports dummy points at X = LCD_Natural_Width.
       --  Let's filter this out
       if X = This.LCD_Natural_Width - 1 then
-         return (0, 0, 0);
+         return Null_Touch_State;
       end if;
 
       if (This.Swap and Invert_X) /= 0 then
@@ -408,6 +408,8 @@ package body STMPE811 is
       State.Y := Y;
 
       State.Weight := Integer'Max (Integer (Raw_Z), 8);
+      State.Area   := Integer'Max (Integer (Raw_Z), 8);
+      State.Event  := Press_Down;
 
       This.Write_Register (IOE_REG_FIFO_STA, 16#01#);
       This.Write_Register (IOE_REG_FIFO_STA, 16#00#);

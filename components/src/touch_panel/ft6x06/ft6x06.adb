@@ -60,11 +60,61 @@ package body FT6x06 is
       return False;
    end Check_Id;
 
-   ---------------------------
-   -- TP_Set_Use_Interrupts --
-   ---------------------------
+   ---------------
+   -- Calibrate --
+   ---------------
 
-   procedure TP_Set_Use_Interrupts
+   function Calibrate (This : in out FT6x06_Device) return Boolean
+   is
+      Reg_Value : Byte;
+      Status    : Boolean;
+
+      function Get_Dev_Mode (This : in out FT6x06_Device) return Byte;
+
+      ------------------
+      -- Get_Dev_Mode --
+      ------------------
+
+      function Get_Dev_Mode (This : in out FT6x06_Device) return Byte
+      is
+      begin
+         return This.I2C_Read
+           (FT6206_DEV_MODE_REG, Status) and FT6206_DEV_MODE_MASK;
+      end Get_Dev_Mode;
+
+   begin
+      --  Switch to factory mode
+      This.I2C_Write (FT6206_DEV_MODE_REG, FT6206_DEV_MODE_FACTORY, Status);
+
+      --  Read the DEV_MODE_REG
+      HAL.Time.Delay_Milliseconds (This.Time.all, 300);
+      Reg_Value := Get_Dev_Mode (This);
+
+      if Reg_Value /= FT6206_DEV_MODE_FACTORY then
+         return False;
+      end if;
+
+      --  Start the calibration command
+      This.I2C_Write (FT6206_TD_STAT_REG, 16#04#, Status);
+      HAL.Time.Delay_Milliseconds (This.Time.all, 300);
+
+      --  100 attempts to wait the switch to working mode
+      for J in 1 .. 100 loop
+         Reg_Value := Get_Dev_Mode (This);
+         if Reg_Value = FT6206_DEV_MODE_WORKING then
+            return True;
+         end if;
+         HAL.Time.Delay_Milliseconds (This.Time.all, 200);
+      end loop;
+
+      return False;
+   end Calibrate;
+
+   ------------------------
+   -- Set_Use_Interrupts --
+   ------------------------
+
+   procedure Set_Use_Interrupts
      (This    : in out FT6x06_Device;
       Enabled : Boolean)
    is
@@ -78,7 +128,22 @@ package body FT6x06 is
       end if;
 
       This.I2C_Write (FT6206_GMODE_REG, Reg_Value, Status);
-   end TP_Set_Use_Interrupts;
+   end Set_Use_Interrupts;
+
+   ---------------------
+   -- Set_Update_Rate --
+   ---------------------
+
+   procedure Set_Update_Rate
+     (This         : in out FT6x06_Device;
+      Active_Rate  : Byte := 60;
+      Monitor_Rate : Byte := 60)
+   is
+      Status : Boolean;
+   begin
+      This.I2C_Write (FT6206_PERIODACTIVE_REG, Active_Rate, Status);
+      This.I2C_Write (FT6206_PERIODMONITOR_REG, Monitor_Rate, Status);
+   end Set_Update_Rate;
 
    ----------------
    -- Set_Bounds --
@@ -130,10 +195,10 @@ package body FT6x06 is
    -- Get_Touch_State --
    ---------------------
 
-   overriding
-   function Get_Touch_Point (This     : in out FT6x06_Device;
-                             Touch_Id : Touch_Identifier)
-                             return HAL.Touch_Panel.TP_Touch_State
+   overriding function Get_Touch_Point
+     (This     : in out FT6x06_Device;
+      Touch_Id : Touch_Identifier)
+      return HAL.Touch_Panel.TP_Touch_State
    is
       type UInt16_HL_Type is record
          High, Low : Byte;
@@ -146,58 +211,61 @@ package body FT6x06 is
       function To_UInt16 is
         new Ada.Unchecked_Conversion (UInt16_HL_Type, UInt16);
 
-      Ret  : TP_Touch_State;
-      Regs : FT6206_Pressure_Registers;
-      Tmp  : UInt16_HL_Type;
-      Status : Boolean;
+      Ret     : TP_Touch_State;
+      Regs    : FT6206_Pressure_Registers;
+      Tmp     : UInt16_HL_Type;
+      Status  : Boolean;
+      Event   : Byte;
+      Data_XY : Byte_Array (1 .. 6);
+
    begin
       if Touch_Id not in FT6206_Px_Regs'Range then
-         return (0, 0, 0);
+         return Null_Touch_State;
       end if;
 
       if Touch_Id > This.Active_Touch_Points then
-         return (0, 0, 0);
+         return Null_Touch_State;
       end if;
 
       --  X/Y are swaped from the screen coordinates
 
       Regs := FT6206_Px_Regs (Touch_Id);
 
-      Tmp.Low := This.I2C_Read (Regs.XL_Reg, Status);
+      This.I2C_Read
+        (Reg    => Regs.XH_Reg,
+         Values => Data_XY,
+         Status => Status);
 
       if not Status then
-         return (0, 0, 0);
+         return Null_Touch_State;
       end if;
 
-      Tmp.High := This.I2C_Read (Regs.XH_Reg, Status) and
-        FT6206_TOUCH_POS_MSB_MASK;
+      Event := Shift_Right (Data_XY (1) and 16#C0#, 6);
 
-      if not Status then
-         return (0, 0, 0);
-      end if;
+      --  Y and X are switch as regard to the display
+      Tmp.High := Data_XY (1) and 16#0F#;
+      Tmp.Low  := Data_XY (2);
+      Ret.Y    := Natural (To_UInt16 (Tmp));
 
-      Ret.Y := Natural (To_UInt16 (Tmp));
+      Ret.Touch_Id := Shift_Right (Data_XY (3) and 16#F0#, 4);
 
-      Tmp.Low := This.I2C_Read (Regs.YL_Reg, Status);
+      Tmp.High := Data_XY (3) and 16#0F#;
+      Tmp.Low  := Data_XY (4);
+      Ret.X    := Natural (To_UInt16 (Tmp));
 
-      if not Status then
-         return (0, 0, 0);
-      end if;
+      Ret.Weight := Natural (Data_XY (5));
+      Ret.Area   := Natural (Data_XY (6));
 
-      Tmp.High := This.I2C_Read (Regs.YH_Reg, Status) and
-        FT6206_TOUCH_POS_MSB_MASK;
-
-      if not Status then
-         return (0, 0, 0);
-      end if;
-
-      Ret.X := Natural (To_UInt16 (Tmp));
-
-      Ret.Weight := Natural (This.I2C_Read (Regs.Weight_Reg, Status));
-
-      if not Status then
-         Ret.Weight := 0;
-      end if;
+      case Event is
+         when 0 =>
+            Ret.Event := Press_Down;
+         when 1 =>
+            Ret.Event := Lift_Up;
+         when 2 =>
+            Ret.Event := Contact;
+         when others =>
+            null;
+      end case;
 
       if Ret.Weight = 0 then
          Ret.Weight := 50;
@@ -272,6 +340,28 @@ package body FT6x06 is
       Status := Tmp_Status = Ok;
 
       return Ret (1);
+   end I2C_Read;
+
+   --------------
+   -- I2C_Read --
+   --------------
+
+   procedure I2C_Read
+     (This   : in out FT6x06_Device;
+      Reg    : Byte;
+      Values : out HAL.Byte_Array;
+      Status : out Boolean)
+   is
+      Tmp_Status : I2C_Status;
+   begin
+      This.Port.Mem_Read
+        (This.I2C_Addr,
+         UInt16 (Reg),
+         Memory_Size_8b,
+         Values,
+         Tmp_Status,
+         1000);
+      Status := Tmp_Status = Ok;
    end I2C_Read;
 
    ---------------

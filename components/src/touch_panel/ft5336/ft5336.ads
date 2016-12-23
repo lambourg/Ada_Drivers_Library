@@ -86,14 +86,22 @@ private
       Swap               : Swap_State := 0;
    end record;
 
-   function I2C_Read (This   : in out FT5336_Device;
-                      Reg    : Byte;
-                      Status : out Boolean)
-                      return Byte;
+   function I2C_Read
+     (This   : in out FT5336_Device;
+      Reg    : Byte;
+      Status : out Boolean)
+      return Byte;
 
-   procedure I2C_Write (This   : in out FT5336_Device;
-                        Reg    : Byte;
-                        Data   : Byte;
-                        Status : out Boolean);
+   procedure I2C_Read
+     (This   : in out FT5336_Device;
+      Reg    : Byte;
+      Values : out HAL.Byte_Array;
+      Status : out Boolean);
+
+   procedure I2C_Write
+     (This   : in out FT5336_Device;
+      Reg    : Byte;
+      Data   : Byte;
+      Status : out Boolean);
 
 end FT5336;

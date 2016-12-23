@@ -286,6 +286,28 @@ package body FT5336 is
       return Ret (1);
    end I2C_Read;
 
+   --------------
+   -- I2C_Read --
+   --------------
+
+   procedure I2C_Read
+     (This   : in out FT5336_Device;
+      Reg    : Byte;
+      Values : out HAL.Byte_Array;
+      Status : out Boolean)
+   is
+      Tmp_Status : I2C_Status;
+   begin
+      This.Port.Mem_Read
+        (This.I2C_Addr,
+         UInt16 (Reg),
+         Memory_Size_8b,
+         Values,
+         Tmp_Status,
+         1000);
+      Status := Tmp_Status = Ok;
+   end I2C_Read;
+
    ---------------
    -- I2C_Write --
    ---------------
@@ -413,10 +435,12 @@ package body FT5336 is
       function To_UInt16 is
         new Ada.Unchecked_Conversion (UInt16_HL_Type, Unsigned_16);
 
-      Ret    : TP_Touch_State;
-      Regs   : FT5336_Pressure_Registers;
-      Tmp    : UInt16_HL_Type;
-      Status : Boolean;
+      Ret     : TP_Touch_State;
+      Regs    : FT5336_Pressure_Registers;
+      Tmp     : UInt16_HL_Type;
+      Status  : Boolean;
+      Event   : Byte;
+      Data_XY : Byte_Array (1 .. 6);
 
    begin
       --  X/Y are swaped from the screen coordinates
@@ -424,46 +448,44 @@ package body FT5336 is
       if Touch_Id not in FT5336_Px_Regs'Range
         or else Touch_Id > This.Active_Touch_Points
       then
-         return (0, 0, 0);
+         return Null_Touch_State;
       end if;
 
       Regs := FT5336_Px_Regs (Touch_Id);
-
-      Tmp.Low := This.I2C_Read (Regs.XL_Reg, Status);
-
-      if not Status then
-         return (0, 0, 0);
-      end if;
-
-      Tmp.High := This.I2C_Read (Regs.XH_Reg, Status) and
-        FT5336_TOUCH_POS_MSB_MASK;
+      This.I2C_Read
+        (Reg    => Regs.XH_Reg,
+         Values => Data_XY,
+         Status => Status);
 
       if not Status then
-         return (0, 0, 0);
+         return Null_Touch_State;
       end if;
 
-      Ret.Y := Natural (To_UInt16 (Tmp));
+      --  Y and X are switch as regard to the display
+      Tmp.High := Data_XY (1) and 16#0F#;
+      Tmp.Low  := Data_XY (2);
+      Ret.Y    := Natural (To_UInt16 (Tmp));
 
-      Tmp.Low := This.I2C_Read (Regs.YL_Reg, Status);
+      Tmp.High := Data_XY (3) and 16#0F#;
+      Tmp.Low  := Data_XY (4);
+      Ret.X    := Natural (To_UInt16 (Tmp));
 
-      if not Status then
-         return (0, 0, 0);
-      end if;
+      Ret.Weight := Natural (Data_XY (5));
+      Ret.Area   := Natural (Data_XY (6));
 
-      Tmp.High := This.I2C_Read (Regs.YH_Reg, Status) and
-        FT5336_TOUCH_POS_MSB_MASK;
-
-      if not Status then
-         return (0, 0, 0);
-      end if;
-
-      Ret.X := Natural (To_UInt16 (Tmp));
-
-      Ret.Weight := Natural (This.I2C_Read (Regs.Weight_Reg, Status));
-
-      if not Status then
-         Ret.Weight := 0;
-      end if;
+      Event := Shift_Right (Data_XY (1) and 16#C0#, 6);
+      case Event is
+         when 0 =>
+            Ret.Event := Press_Down;
+         when 1 =>
+            Ret.Event := Lift_Up;
+         when 2 =>
+            Ret.Event := Contact;
+         when 3 =>
+            Ret.Event := No_Event;
+         when others =>
+            null;
+      end case;
 
       Ret.X :=
         Natural'Min (Natural'Max (0, Ret.X), This.LCD_Natural_Width - 1);
