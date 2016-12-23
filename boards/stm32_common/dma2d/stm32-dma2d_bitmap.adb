@@ -150,7 +150,25 @@ package body STM32.DMA2D_Bitmap is
       Height : Integer)
    is
       DMA_Buf : constant DMA2D_Buffer := To_DMA2D_Buffer (Buffer);
+      W, H    : Integer;
    begin
+      if X >= Buffer.Width or else Y >= Buffer.Height then
+         return;
+      end if;
+
+      if X + Width >= Buffer.Width then
+         W := Buffer.Width - X - 1;
+      else
+         W := Width;
+      end if;
+
+      if Y + Height >= Buffer.Height then
+         H := Buffer.Height - Y - 1;
+      else
+         H := Height;
+      end if;
+
+
       if To_DMA2D_CM (Buffer.Color_Mode) in DMA2D_Dst_Color_Mode then
          if not Buffer.Swapped then
             DMA2D_Fill_Rect
@@ -158,16 +176,16 @@ package body STM32.DMA2D_Bitmap is
                Color  => Color,
                X      => X,
                Y      => Y,
-               Width  => Width,
-               Height => Height);
+               Width  => W,
+               Height => H);
          else
             DMA2D_Fill_Rect
               (DMA_Buf,
                Color  => Color,
                X      => Y,
-               Y      => Buffer.Width - X - Width,
-               Width  => Height,
-               Height => Width);
+               Y      => Buffer.Width - X - W,
+               Width  => H,
+               Height => W);
          end if;
       else
          HAL.Bitmap.Bitmap_Buffer (Buffer).Fill_Rect
