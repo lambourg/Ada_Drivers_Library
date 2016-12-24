@@ -43,30 +43,30 @@ package Audio is
    type WM8994_Audio_Device (Port : not null Any_I2C_Port) is limited new
      Audio_Device with private;
 
-   procedure Initialize_Audio_Out
+   overriding procedure Initialize_Audio_Out
      (This      : in out WM8994_Audio_Device;
       Volume    : Audio_Volume;
       Frequency : Audio_Frequency);
 
-   procedure Set_Volume
+   overriding procedure Set_Volume
      (This   : in out WM8994_Audio_Device;
       Volume : Audio_Volume);
 
-   procedure Set_Frequency
+   overriding procedure Set_Frequency
      (This   : in out WM8994_Audio_Device;
       Frequency : Audio_Frequency);
 
-   procedure Play
+   overriding procedure Play
      (This   : in out WM8994_Audio_Device;
       Buffer : Audio_Buffer);
 
-   procedure Pause
+   overriding procedure Pause
      (This : in out WM8994_Audio_Device);
 
-   procedure Resume
+   overriding procedure Resume
      (This : in out WM8994_Audio_Device);
 
-   procedure Stop
+   overriding procedure Stop
      (This : in out WM8994_Audio_Device);
 
 private
