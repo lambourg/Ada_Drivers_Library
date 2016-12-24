@@ -38,6 +38,8 @@ with HAL.Touch_Panel;      use HAL.Touch_Panel;
 
 with STM32.Board;          use STM32.Board;
 with STM32.Device;         use STM32.Device;
+with STM32.EXTI;           use STM32.EXTI;
+with STM32.GPIO;           use STM32.GPIO;
 with FT5336;               use FT5336;
 
 package body Touch_Panel_FT5336 is
@@ -47,20 +49,36 @@ package body Touch_Panel_FT5336 is
    ----------------
 
    function Initialize
-     (This        : in out Touch_Panel;
-      Orientation : HAL.Framebuffer.Display_Orientation :=
-                      HAL.Framebuffer.Default)
-      return Boolean
+     (This              : in out Touch_Panel;
+      Orientation       : HAL.Framebuffer.Display_Orientation :=
+                            HAL.Framebuffer.Default;
+      Calibrate         : Boolean := False;
+      Enable_Interrupts : Boolean := False) return Boolean
    is
    begin
       Initialize_I2C_GPIO (TP_I2C);
+
+      if Enable_Interrupts then
+         Enable_Clock (TP_INT);
+         STM32.GPIO.Configure_IO
+           (TP_INT,
+            (Mode        => Mode_In,
+             Output_Type => Open_Drain,
+             Speed       => Speed_High,
+             Resistors   => Pull_Down));
+         STM32.GPIO.Configure_Trigger (TP_INT, Interrupt_Rising_Edge);
+      end if;
 
       --  Wait at least 200ms after power up before accessing the TP registers
       delay until Clock + Milliseconds (200);
 
       Configure_I2C (TP_I2C);
 
-      This.TP_Set_Use_Interrupts (False);
+      if Calibrate and then not This.Calibrate then
+         return False;
+      end if;
+
+      This.Set_Use_Interrupts (Enable_Interrupts);
       This.Set_Orientation (Orientation);
 
       return This.Check_Id;
@@ -70,11 +88,15 @@ package body Touch_Panel_FT5336 is
    -- Initialize --
    ----------------
 
-   procedure Initialize (This : in out Touch_Panel;
-      Orientation : HAL.Framebuffer.Display_Orientation :=
-                           HAL.Framebuffer.Default) is
+   procedure Initialize
+     (This              : in out Touch_Panel;
+      Orientation       : HAL.Framebuffer.Display_Orientation :=
+                            HAL.Framebuffer.Default;
+      Calibrate         : Boolean := False;
+      Enable_Interrupts : Boolean := False)
+   is
    begin
-      if not This.Initialize (Orientation) then
+      if not This.Initialize (Orientation, Calibrate, Enable_Interrupts) then
          raise Constraint_Error with "Cannot initialize the touch panel";
       end if;
    end Initialize;

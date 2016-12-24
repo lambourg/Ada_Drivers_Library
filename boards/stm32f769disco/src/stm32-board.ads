@@ -152,13 +152,14 @@ package STM32.Board is
    LCD_Natural_Height : constant := Framebuffer_OTM8009A.LCD_Natural_Height;
 
    Display     : Framebuffer_OTM8009A.Frame_Buffer;
-   Touch_Panel : Touch_Panel_FT6x06.Touch_Panel;
+   Touch_Panel : Touch_Panel_FT6x06.Touch_Panel (I2C_4'Access);
 
    -----------------
    -- Touch Panel --
    -----------------
 
    TP_INT   : GPIO_Point renames PI13;
+   TP_Interrupt : constant Interrupt_ID := Names.EXTI15_10_Interrupt;
 
    TP_Pins  : constant GPIO_Points :=
                 (I2C4_SCL, I2C4_SDA);

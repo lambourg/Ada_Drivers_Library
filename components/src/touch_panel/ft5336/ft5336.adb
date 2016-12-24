@@ -46,10 +46,9 @@ package body FT5336 is
 
    --  Possible values of FT5336_DEV_MODE_REG
    FT5336_DEV_MODE_WORKING             : constant Unsigned_8 := 16#00#;
-   FT5336_DEV_MODE_FACTORY             : constant Unsigned_8 := 16#04#;
+   FT5336_DEV_MODE_FACTORY             : constant Unsigned_8 := 16#40#;
 
-   FT5336_DEV_MODE_MASK                : constant Unsigned_8 := 16#07#;
-   FT5336_DEV_MODE_SHIFT               : constant Unsigned_8 := 16#04#;
+   FT5336_DEV_MODE_MASK                : constant Unsigned_8 := 16#70#;
 
    --  Gesture ID register
    FT5336_GEST_ID_REG                  : constant Unsigned_8 := 16#01#;
@@ -293,7 +292,7 @@ package body FT5336 is
    procedure I2C_Read
      (This   : in out FT5336_Device;
       Reg    : Byte;
-      Values : out HAL.Byte_Array;
+      Values : out Byte_Array;
       Status : out Boolean)
    is
       Tmp_Status : I2C_Status;
@@ -353,12 +352,13 @@ package body FT5336 is
       return False;
    end Check_Id;
 
-   ---------------------------
-   -- TP_Set_Use_Interrupts --
-   ---------------------------
+   ------------------------
+   -- Set_Use_Interrupts --
+   ------------------------
 
-   procedure TP_Set_Use_Interrupts (This    : in out FT5336_Device;
-                                    Enabled : Boolean)
+   procedure Set_Use_Interrupts
+     (This    : in out FT5336_Device;
+      Enabled : Boolean)
    is
       Reg_Value : Unsigned_8 := 0;
       Status    : Boolean with Unreferenced;
@@ -370,7 +370,57 @@ package body FT5336 is
       end if;
 
       This.I2C_Write (FT5336_GMODE_REG, Reg_Value, Status);
-   end TP_Set_Use_Interrupts;
+   end Set_Use_Interrupts;
+
+   ---------------
+   -- Calibrate --
+   ---------------
+
+   function Calibrate (This : in out FT5336_Device) return Boolean
+   is
+      Reg_Value : Byte;
+      Status    : Boolean;
+
+      function Get_Dev_Mode (This : in out FT5336_Device) return Byte;
+
+      ------------------
+      -- Get_Dev_Mode --
+      ------------------
+
+      function Get_Dev_Mode (This : in out FT5336_Device) return Byte
+      is
+      begin
+         return This.I2C_Read
+           (FT5336_DEV_MODE_REG, Status) and FT5336_DEV_MODE_MASK;
+      end Get_Dev_Mode;
+
+   begin
+      --  Switch to factory mode
+      This.I2C_Write (FT5336_DEV_MODE_REG, FT5336_DEV_MODE_FACTORY, Status);
+
+      --  Read the DEV_MODE_REG
+      HAL.Time.Delay_Milliseconds (This.Time.all, 300);
+      Reg_Value := Get_Dev_Mode (This);
+
+      if Reg_Value /= FT5336_DEV_MODE_FACTORY then
+         return False;
+      end if;
+
+      --  Start the calibration command
+      This.I2C_Write (FT5336_TD_STAT_REG, 16#04#, Status);
+      HAL.Time.Delay_Milliseconds (This.Time.all, 300);
+
+      --  100 attempts to wait the switch to working mode
+      for J in 1 .. 100 loop
+         Reg_Value := Get_Dev_Mode (This);
+         if Reg_Value = FT5336_DEV_MODE_WORKING then
+            return True;
+         end if;
+         HAL.Time.Delay_Milliseconds (This.Time.all, 200);
+      end loop;
+
+      return False;
+   end Calibrate;
 
    ----------------
    -- Set_Bounds --
@@ -439,8 +489,8 @@ package body FT5336 is
       Regs    : FT5336_Pressure_Registers;
       Tmp     : UInt16_HL_Type;
       Status  : Boolean;
-      Event   : Byte;
       Data_XY : Byte_Array (1 .. 6);
+      Event   : UInt2;
 
    begin
       --  X/Y are swaped from the screen coordinates
@@ -452,14 +502,26 @@ package body FT5336 is
       end if;
 
       Regs := FT5336_Px_Regs (Touch_Id);
-      This.I2C_Read
-        (Reg    => Regs.XH_Reg,
-         Values => Data_XY,
-         Status => Status);
+      This.I2C_Read (Regs.XH_Reg, Data_XY, Status);
 
       if not Status then
          return Null_Touch_State;
       end if;
+
+      Event    := UInt2 (Shift_Right (Data_XY (1) and 16#C0#, 6));
+
+      case Event is
+         when 0 =>
+            Ret.Event := Press_Down;
+         when 1 =>
+            Ret.Event := Lift_Up;
+         when 2 =>
+            Ret.Event := Contact;
+         when 3 =>
+            Ret.Event := No_Event;
+      end case;
+
+      Ret.Touch_Id := Shift_Right (Data_XY (3) and 16#F0#, 4);
 
       --  Y and X are switch as regard to the display
       Tmp.High := Data_XY (1) and 16#0F#;
@@ -471,21 +533,6 @@ package body FT5336 is
       Ret.X    := Natural (To_UInt16 (Tmp));
 
       Ret.Weight := Natural (Data_XY (5));
-      Ret.Area   := Natural (Data_XY (6));
-
-      Event := Shift_Right (Data_XY (1) and 16#C0#, 6);
-      case Event is
-         when 0 =>
-            Ret.Event := Press_Down;
-         when 1 =>
-            Ret.Event := Lift_Up;
-         when 2 =>
-            Ret.Event := Contact;
-         when 3 =>
-            Ret.Event := No_Event;
-         when others =>
-            null;
-      end case;
 
       Ret.X :=
         Natural'Min (Natural'Max (0, Ret.X), This.LCD_Natural_Width - 1);

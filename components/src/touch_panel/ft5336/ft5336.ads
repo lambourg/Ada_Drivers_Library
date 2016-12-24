@@ -34,21 +34,27 @@
 with HAL;             use HAL;
 with HAL.I2C;         use HAL.I2C;
 with HAL.Touch_Panel; use HAL.Touch_Panel;
+with HAL.Time;        use HAL.Time;
 
 package FT5336 is
 
    type FT5336_Device (Port     : not null I2C_Port_Ref;
-                       I2C_Addr : I2C_Address) is
+                       I2C_Addr : I2C_Address;
+                       Time     : not null HAL.Time.Delays_Ref) is
      limited new Touch_Panel_Device with private;
 
    function Check_Id (This : in out FT5336_Device) return Boolean;
    --  Checks the ID of the touch panel controller, returns false if not found
    --  or invalid.
 
-   procedure TP_Set_Use_Interrupts (This : in out FT5336_Device;
-                                    Enabled : Boolean);
+   procedure Set_Use_Interrupts
+     (This    : in out FT5336_Device;
+      Enabled : Boolean);
    --  Whether the data is retrieved upon interrupt or by polling by the
    --  software.
+
+   function Calibrate (This : in out FT5336_Device) return Boolean;
+   --  Performs a factory calibration on the device.
 
    overriding
    procedure Set_Bounds (This   : in out FT5336_Device;
@@ -79,7 +85,8 @@ package FT5336 is
 private
 
    type FT5336_Device (Port     : not null I2C_Port_Ref;
-                       I2C_Addr : I2C_Address) is
+                       I2C_Addr : I2C_Address;
+                       Time     : not null HAL.Time.Delays_Ref) is
      limited new HAL.Touch_Panel.Touch_Panel_Device with record
       LCD_Natural_Width  : Natural := 0;
       LCD_Natural_Height : Natural := 0;
@@ -95,7 +102,7 @@ private
    procedure I2C_Read
      (This   : in out FT5336_Device;
       Reg    : Byte;
-      Values : out HAL.Byte_Array;
+      Values : out Byte_Array;
       Status : out Boolean);
 
    procedure I2C_Write

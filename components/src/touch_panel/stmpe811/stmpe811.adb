@@ -407,9 +407,12 @@ package body STMPE811 is
       State.X := X;
       State.Y := Y;
 
-      State.Weight := Integer'Max (Integer (Raw_Z), 8);
-      State.Area   := Integer'Max (Integer (Raw_Z), 8);
-      State.Event  := Press_Down;
+      State.Weight   := Integer'Max (Integer (Raw_Z), 8);
+      --  constant event kind: the hw does not tell us if it's a new touch or
+      --  if the finger is released
+      State.Event    := Press_Down;
+      --  No multitouch here: touch_id is always 0
+      State.Touch_Id := 0;
 
       This.Write_Register (IOE_REG_FIFO_STA, 16#01#);
       This.Write_Register (IOE_REG_FIFO_STA, 16#00#);

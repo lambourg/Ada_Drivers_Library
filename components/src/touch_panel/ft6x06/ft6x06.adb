@@ -33,7 +33,6 @@
 --  Based on the ft6x06 driver from MCD Application Team
 
 with Ada.Unchecked_Conversion;
-with HAL.Touch_Panel; use HAL.Touch_Panel;
 
 package body FT6x06 is
 
@@ -59,6 +58,26 @@ package body FT6x06 is
 
       return False;
    end Check_Id;
+
+   ------------------------
+   -- Set_Use_Interrupts --
+   ------------------------
+
+   procedure Set_Use_Interrupts
+     (This    : in out FT6x06_Device;
+      Enabled : Boolean)
+   is
+      Reg_Value : Byte := 0;
+      Status    : Boolean with Unreferenced;
+   begin
+      if Enabled then
+         Reg_Value := FT6206_G_MODE_INTERRUPT_TRIGGER;
+      else
+         Reg_Value := FT6206_G_MODE_INTERRUPT_POLLING;
+      end if;
+
+      This.I2C_Write (FT6206_GMODE_REG, Reg_Value, Status);
+   end Set_Use_Interrupts;
 
    ---------------
    -- Calibrate --
@@ -109,26 +128,6 @@ package body FT6x06 is
 
       return False;
    end Calibrate;
-
-   ------------------------
-   -- Set_Use_Interrupts --
-   ------------------------
-
-   procedure Set_Use_Interrupts
-     (This    : in out FT6x06_Device;
-      Enabled : Boolean)
-   is
-      Reg_Value : Byte := 0;
-      Status    : Boolean with Unreferenced;
-   begin
-      if Enabled then
-         Reg_Value := FT6206_G_MODE_INTERRUPT_TRIGGER;
-      else
-         Reg_Value := FT6206_G_MODE_INTERRUPT_POLLING;
-      end if;
-
-      This.I2C_Write (FT6206_GMODE_REG, Reg_Value, Status);
-   end Set_Use_Interrupts;
 
    ---------------------
    -- Set_Update_Rate --
@@ -215,8 +214,8 @@ package body FT6x06 is
       Regs    : FT6206_Pressure_Registers;
       Tmp     : UInt16_HL_Type;
       Status  : Boolean;
-      Event   : Byte;
       Data_XY : Byte_Array (1 .. 6);
+      Event   : UInt2;
 
    begin
       if Touch_Id not in FT6206_Px_Regs'Range then
@@ -227,34 +226,16 @@ package body FT6x06 is
          return Null_Touch_State;
       end if;
 
-      --  X/Y are swaped from the screen coordinates
-
       Regs := FT6206_Px_Regs (Touch_Id);
-
-      This.I2C_Read
-        (Reg    => Regs.XH_Reg,
-         Values => Data_XY,
-         Status => Status);
+      This.I2C_Read (Regs.XH_Reg, Data_XY, Status);
 
       if not Status then
          return Null_Touch_State;
       end if;
 
-      Event := Shift_Right (Data_XY (1) and 16#C0#, 6);
-
-      --  Y and X are switch as regard to the display
-      Tmp.High := Data_XY (1) and 16#0F#;
-      Tmp.Low  := Data_XY (2);
-      Ret.Y    := Natural (To_UInt16 (Tmp));
-
-      Ret.Touch_Id := Shift_Right (Data_XY (3) and 16#F0#, 4);
-
-      Tmp.High := Data_XY (3) and 16#0F#;
-      Tmp.Low  := Data_XY (4);
-      Ret.X    := Natural (To_UInt16 (Tmp));
-
-      Ret.Weight := Natural (Data_XY (5));
-      Ret.Area   := Natural (Data_XY (6));
+      --  X/Y are swaped from the screen coordinates
+      --  ??? TODO: make it a generic parameter of this package.
+      Event    := UInt2 (Shift_Right (Data_XY (1) and 16#C0#, 6));
 
       case Event is
          when 0 =>
@@ -263,9 +244,21 @@ package body FT6x06 is
             Ret.Event := Lift_Up;
          when 2 =>
             Ret.Event := Contact;
-         when others =>
-            null;
+         when 3 =>
+            Ret.Event := No_Event;
       end case;
+
+      Ret.Touch_Id := Shift_Right (Data_XY (3) and 16#F0#, 4);
+
+      Tmp.High := Data_XY (1) and 16#0F#;
+      Tmp.Low  := Data_XY (2);
+      Ret.Y := Natural (To_UInt16 (Tmp));
+
+      Tmp.High := Data_XY (3) and 16#0F#;
+      Tmp.Low  := Data_XY (4);
+      Ret.X := Natural (To_UInt16 (Tmp));
+
+      Ret.Weight := Natural (Data_XY (5));
 
       if Ret.Weight = 0 then
          Ret.Weight := 50;
@@ -349,7 +342,7 @@ package body FT6x06 is
    procedure I2C_Read
      (This   : in out FT6x06_Device;
       Reg    : Byte;
-      Values : out HAL.Byte_Array;
+      Values : out Byte_Array;
       Status : out Boolean)
    is
       Tmp_Status : I2C_Status;

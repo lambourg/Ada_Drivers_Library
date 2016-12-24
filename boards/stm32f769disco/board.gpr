@@ -15,7 +15,8 @@ library project Board is
                         "../common",
                         "../stm32_common",
                         "../stm32_common/sdram",
-                        "../stm32_common/dma2d");
+                        "../stm32_common/dma2d",
+                        "../stm32_common/ft6x06");
 
    case RTS is
       when "ravenscar-full" =>

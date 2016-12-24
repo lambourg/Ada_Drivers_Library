@@ -32,29 +32,30 @@
 --  Driver package for the FT6x06 touch screen panel
 --  Based on the ft6x06 driver from MCD Application Team
 
-with Interfaces; use Interfaces;
-with HAL;        use HAL;
-with HAL.I2C;    use HAL.I2C;
-with HAL.Touch_Panel;
-with HAL.Time;
+with Interfaces;      use Interfaces;
+with HAL;             use HAL;
+with HAL.I2C;         use HAL.I2C;
+with HAL.Touch_Panel; use HAL.Touch_Panel;
+with HAL.Time;        use HAL.Time;
 
 package FT6x06 is
 
    type FT6x06_Device (Port     : not null I2C_Port_Ref;
                        I2C_Addr : I2C_Address;
                        Time     : not null HAL.Time.Delays_Ref) is
-   limited new HAL.Touch_Panel.Touch_Panel_Device with private;
+     limited new HAL.Touch_Panel.Touch_Panel_Device with private;
 
    function Check_Id (This : in out FT6x06_Device) return Boolean;
    --  Check the device Id: returns true on a FT5336 touch panel, False is
    --  none is found.
 
-   function Calibrate (This : in out FT6x06_Device) return Boolean;
-
    procedure Set_Use_Interrupts (This : in out FT6x06_Device;
                                  Enabled : Boolean);
-   --  Whether the touch panel uses interrupts or polling to process touch
+   --  Whether the touch panel uses interrupts of polling to process touch
    --  information
+
+   function Calibrate (This : in out FT6x06_Device) return Boolean;
+   --  Performs a factory calibration on the device.
 
    procedure Set_Update_Rate
      (This         : in out FT6x06_Device;
@@ -111,8 +112,8 @@ private
 
    procedure I2C_Write
      (This   : in out FT6x06_Device;
-      Reg    : Byte;
-      Data   : Byte;
+                        Reg    : Byte;
+                        Data   : Byte;
       Status : out Boolean);
 
    ------------------------------------------------------------
