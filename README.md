@@ -46,5 +46,3 @@ Therefore, building with the sources requires a compiler supporting both Ada
 compiler for ARM ELF is one such compiler [(Download it
 here)](http://libre.adacore.com/download/configurations). A recent GNAT Pro
 compiler for that target will also suffice.
-
-
