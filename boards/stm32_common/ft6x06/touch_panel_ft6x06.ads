@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                    Copyright (C) 2016, AdaCore                           --
+--                  Copyright (C) 2015-2016, AdaCore                        --
 --                                                                          --
 --  Redistribution and use in source and binary forms, with or without      --
 --  modification, are permitted provided that the following conditions are  --
@@ -11,7 +11,7 @@
 --        notice, this list of conditions and the following disclaimer in   --
 --        the documentation and/or other materials provided with the        --
 --        distribution.                                                     --
---     3. Neither the name of STMicroelectronics nor the names of its       --
+--     3. Neither the name of the copyright holder nor the names of its     --
 --        contributors may be used to endorse or promote products derived   --
 --        from this software without specific prior written permission.     --
 --                                                                          --
@@ -27,53 +27,56 @@
 --   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE  --
 --   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.   --
 --                                                                          --
---  This file is based on:                                                  --
---   @file    stm32f469i_discovery_audio.h                                  --
---   @author  MCD Application Team                                          --
 ------------------------------------------------------------------------------
 
-with HAL.Audio;      use HAL.Audio;
-with HAL.I2C;        use HAL.I2C;
-with Ravenscar_Time;
+with HAL.Touch_Panel;
+with HAL.Framebuffer;
 
-private with CS43L22;
+with STM32.I2C;
+with STM32.GPIO;
 
-package Audio is
+private with FT6x06;
+private with Ravenscar_Time;
 
-   type CS43L22_Audio_Device (Port : not null Any_I2C_Port) is limited
-     new HAL.Audio.Audio_Device with private;
+generic
 
-   overriding procedure Initialize_Audio_Out
-     (This      : in out CS43L22_Audio_Device;
-      Volume    : Audio_Volume;
-      Frequency : Audio_Frequency);
+   TP_I2C : access STM32.I2C.I2C_Port;
+   TP_INT : STM32.GPIO.GPIO_Point;
+   Width  : Natural;
+   Height : Natural;
 
-   overriding procedure Play
-     (This   : in out CS43L22_Audio_Device;
-      Buffer : Audio_Buffer);
+   with procedure Initialize_I2C_GPIO (Port : in out STM32.I2C.I2C_Port);
 
-   overriding procedure Pause
-     (This : in out CS43L22_Audio_Device);
 
-   overriding procedure Resume
-     (This : in out CS43L22_Audio_Device);
+package Touch_Panel_FT6x06 is
 
-   overriding procedure Stop
-     (This : in out CS43L22_Audio_Device);
+   type Touch_Panel is
+     limited new HAL.Touch_Panel.Touch_Panel_Device
+     with private;
 
-   overriding procedure Set_Volume
-     (This   : in out CS43L22_Audio_Device;
-      Volume : Audio_Volume);
+   function Initialize
+     (This              : in out Touch_Panel;
+      Orientation       : HAL.Framebuffer.Display_Orientation :=
+                            HAL.Framebuffer.Default;
+      Calibrate         : Boolean := False;
+      Enable_Interrupts : Boolean := False) return Boolean;
 
-   overriding procedure Set_Frequency
-     (This      : in out CS43L22_Audio_Device;
-      Frequency : Audio_Frequency);
+   procedure Initialize
+     (This              : in out Touch_Panel;
+      Orientation       : HAL.Framebuffer.Display_Orientation :=
+                            HAL.Framebuffer.Default;
+      Calibrate         : Boolean := False;
+      Enable_Interrupts : Boolean := False);
+
+   procedure Set_Orientation
+     (This        : in out Touch_Panel;
+      Orientation : HAL.Framebuffer.Display_Orientation);
 
 private
 
-   type CS43L22_Audio_Device (Port : not null Any_I2C_Port) is limited
-   new HAL.Audio.Audio_Device with record
-      Device : CS43L22.CS43L22_Device (Port, Ravenscar_Time.Delays);
-   end record;
+   type Touch_Panel is limited new FT6x06.FT6x06_Device
+       (Port     => TP_I2C,
+        I2C_Addr => 16#54#,
+        Time     => Ravenscar_Time.Delays) with null record;
 
-end Audio;
+end Touch_Panel_FT6x06;

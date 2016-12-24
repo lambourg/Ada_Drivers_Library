@@ -154,7 +154,6 @@ package STM32.Board is
    LCD_Natural_Width  : constant := Framebuffer_OTM8009A.LCD_Natural_Width;
    LCD_Natural_Height : constant := Framebuffer_OTM8009A.LCD_Natural_Height;
    Display            : Framebuffer_OTM8009A.Frame_Buffer;
-   Touch_Panel        : Touch_Panel_FT6x06.Touch_Panel (I2C_1'Access);
 
    -----------------
    -- Touch Panel --
@@ -162,6 +161,14 @@ package STM32.Board is
 
    TP_INT       : GPIO_Point renames PJ5;
    TP_Interrupt : constant Interrupt_ID := Names.EXTI9_5_Interrupt;
+
+   package TP is new Touch_Panel_FT6x06
+     (TP_I2C              => I2C_1'Access,
+      TP_INT              => TP_INT,
+      Initialize_I2C_GPIO => Initialize_I2C_GPIO,
+      Width               => LCD_Natural_Width,
+      Height              => LCD_Natural_Height);
+   Touch_Panel : TP.Touch_Panel;
 
    -----------
    -- Audio --

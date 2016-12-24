@@ -190,7 +190,7 @@ package body Audio is
    -- Initialize --
    ----------------
 
-   procedure Initialize_Audio_Out
+   overriding procedure Initialize_Audio_Out
      (This      : in out WM8994_Audio_Device;
       Volume    : Audio_Volume;
       Frequency : Audio_Frequency)

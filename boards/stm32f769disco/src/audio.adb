@@ -192,7 +192,7 @@ package body Audio is
    -- Initialize --
    ----------------
 
-   procedure Initialize_Audio_Out
+   overriding procedure Initialize_Audio_Out
      (This      : in out WM8994_Audio_Device;
       Volume    : Audio_Volume;
       Frequency : Audio_Frequency)
@@ -227,7 +227,7 @@ package body Audio is
    -- Play --
    ----------
 
-   procedure Play
+   overriding procedure Play
      (This   : in out WM8994_Audio_Device;
       Buffer : Audio_Buffer)
    is
@@ -255,7 +255,7 @@ package body Audio is
    -- Pause --
    -----------
 
-   procedure Pause (This : in out WM8994_Audio_Device) is
+   overriding procedure Pause (This : in out WM8994_Audio_Device) is
    begin
       This.Device.Pause;
       DMA_Pause (Audio_SAI, SAI_Out_Block);
@@ -265,7 +265,7 @@ package body Audio is
    -- Resume --
    ------------
 
-   procedure Resume (This : in out WM8994_Audio_Device)
+   overriding procedure Resume (This : in out WM8994_Audio_Device)
    is
    begin
       This.Device.Resume;
@@ -276,7 +276,7 @@ package body Audio is
    -- Stop --
    ----------
 
-   procedure Stop (This : in out WM8994_Audio_Device)
+   overriding procedure Stop (This : in out WM8994_Audio_Device)
    is
    begin
       This.Device.Stop (WM8994.Stop_Power_Down_Sw);
@@ -290,7 +290,7 @@ package body Audio is
    -- Set_Volume --
    ----------------
 
-   procedure Set_Volume
+   overriding procedure Set_Volume
      (This   : in out WM8994_Audio_Device;
       Volume : Audio_Volume)
    is
@@ -302,7 +302,7 @@ package body Audio is
    -- Set_Frequency --
    -------------------
 
-   procedure Set_Frequency
+   overriding procedure Set_Frequency
      (This      : in out WM8994_Audio_Device;
       Frequency : Audio_Frequency)
    is

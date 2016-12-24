@@ -38,9 +38,9 @@ with HAL.Time;        use HAL.Time;
 
 package FT5336 is
 
-   type FT5336_Device (Port     : not null I2C_Port_Ref;
+   type FT5336_Device (Port     : not null Any_I2C_Port;
                        I2C_Addr : I2C_Address;
-                       Time     : not null HAL.Time.Delays_Ref) is
+                       Time     : not null HAL.Time.Any_Delays) is
      limited new Touch_Panel_Device with private;
 
    function Check_Id (This : in out FT5336_Device) return Boolean;
@@ -84,9 +84,9 @@ package FT5336 is
 
 private
 
-   type FT5336_Device (Port     : not null I2C_Port_Ref;
+   type FT5336_Device (Port     : not null Any_I2C_Port;
                        I2C_Addr : I2C_Address;
-                       Time     : not null HAL.Time.Delays_Ref) is
+                       Time     : not null HAL.Time.Any_Delays) is
      limited new HAL.Touch_Panel.Touch_Panel_Device with record
       LCD_Natural_Width  : Natural := 0;
       LCD_Natural_Height : Natural := 0;

@@ -152,7 +152,6 @@ package STM32.Board is
    LCD_Natural_Height : constant := Framebuffer_OTM8009A.LCD_Natural_Height;
 
    Display     : Framebuffer_OTM8009A.Frame_Buffer;
-   Touch_Panel : Touch_Panel_FT6x06.Touch_Panel (I2C_4'Access);
 
    -----------------
    -- Touch Panel --
@@ -163,6 +162,14 @@ package STM32.Board is
 
    TP_Pins  : constant GPIO_Points :=
                 (I2C4_SCL, I2C4_SDA);
+
+   package TP is new Touch_Panel_FT6x06
+     (TP_I2C              => I2C_4'Access,
+      TP_INT              => TP_INT,
+      Initialize_I2C_GPIO => Initialize_I2C_GPIO,
+      Width               => LCD_Natural_Width,
+      Height              => LCD_Natural_Height);
+   Touch_Panel : TP.Touch_Panel;
 
    -----------
    -- Audio --
