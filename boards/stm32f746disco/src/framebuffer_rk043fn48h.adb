@@ -41,12 +41,11 @@ package body Framebuffer_RK043FN48H is
    LCD_VSYNC     : GPIO_Point renames PI9;
    LCD_CLK       : GPIO_Point renames PI14;
    LCD_DE        : GPIO_Point renames PK7;
-   LCD_INT       : GPIO_Point renames PI13;
 
    NC1           : GPIO_Point renames PI8;
 
    LCD_CTRL_PINS : constant GPIO_Points :=
-                     (LCD_VSYNC, LCD_HSYNC, LCD_INT,
+                     (LCD_VSYNC, LCD_HSYNC,
                       LCD_CLK, LCD_DE, NC1);
    LCD_RGB_AF14  : constant GPIO_Points :=
                      (PI15, PJ0, PJ1, PJ2, PJ3, PJ4, PJ5, PJ6, --  Red
@@ -67,6 +66,11 @@ package body Framebuffer_RK043FN48H is
                     LCD_CTRL_PINS & LCD_RGB_AF14 & LCD_RGB_AF9;
 
    begin
+      --  Important note: by design, the LCD_INT (PI13) is not bound to the
+      --  LTDC AF function, as it's also used as touch screen interrupt.
+      --  We deem the touch screen interrupt more important here (allows
+      --  waiting for touch events) than the LCD interrupts, as the LTDC
+      --  already allows proper synchronisation with the screen.
       Enable_Clock (LTDC_Pins);
 
       Configure_Alternate_Function
