@@ -51,8 +51,6 @@ package body STM32.Device is
    PPRE_Presc_Table : constant array (UInt3) of UInt32 :=
      (1, 1, 1, 1, 2, 4, 8, 16);
 
-   function PLLSAI_Enabled return Boolean;
-
    ------------------
    -- Enable_Clock --
    ------------------
@@ -917,15 +915,6 @@ package body STM32.Device is
       RCC_Periph.CR.PLLSAION := False;
    end Disable_PLLSAI;
 
-   --------------------
-   -- PLLSAI_Enabled --
-   --------------------
-
-   function PLLSAI_Enabled return Boolean is
-   begin
-      return RCC_Periph.CR.PLLSAION and then RCC_Periph.CR.PLLSAIRDY;
-   end PLLSAI_Enabled;
-
    ------------------------
    -- Set_PLLSAI_Factors --
    ------------------------
@@ -955,14 +944,10 @@ package body STM32.Device is
       PLLI2SDIVQ : DIVQ)
    is
       PLLI2SCFGR : PLLI2SCFGR_Register := RCC_Periph.PLLI2SCFGR;
-      SAION      : constant Boolean := PLLSAI_Enabled;
+
    begin
       if Periph'Address /= SAI_Base then
          raise Unknown_Device;
-      end if;
-
-      if SAION then
-         Disable_PLLSAI;
       end if;
 
       if RCC_Periph.CR.PLLI2SON then
@@ -982,10 +967,6 @@ package body STM32.Device is
       RCC_Periph.PLLI2SCFGR := PLLI2SCFGR;
 
       RCC_Periph.DCKCFGR.PLLIS2DIVQ := UInt5 (PLLI2SDIVQ - 1);
-
-      if SAION then
-         Enable_PLLSAI;
-      end if;
 
       RCC_Periph.CR.PLLI2SON := True;
 

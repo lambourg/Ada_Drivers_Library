@@ -32,7 +32,6 @@
 --  Based on ft6x06.h from MCD Application Team
 
 with Ada.Real_Time;        use Ada.Real_Time;
-with Ada.Unchecked_Conversion;
 
 with STM32.Device;         use STM32.Device;
 with STM32.I2C;            use STM32.I2C;

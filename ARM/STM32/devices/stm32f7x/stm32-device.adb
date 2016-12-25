@@ -920,12 +920,8 @@ package body STM32.Device is
       PLLI2SDIVQ : DIVQ)
    is
       PLLI2SCFGR : PLLI2SCFGR_Register := RCC_Periph.PLLI2SCFGR;
-      SAION      : constant Boolean := PLLSAI_Enabled;
-   begin
-      if SAION then
-         Disable_PLLSAI;
-      end if;
 
+   begin
       if RCC_Periph.CR.PLLI2SON then
          RCC_Periph.CR.PLLI2SON := False;
       end if;
@@ -949,10 +945,6 @@ package body STM32.Device is
       RCC_Periph.PLLI2SCFGR := PLLI2SCFGR;
 
       RCC_Periph.DKCFGR1.PLLI2SDIV := UInt5 (PLLI2SDIVQ - 1);
-
-      if SAION then
-         Enable_PLLSAI;
-      end if;
 
       RCC_Periph.CR.PLLI2SON := True;
 
