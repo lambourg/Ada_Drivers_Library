@@ -156,14 +156,14 @@ package body STM32.DMA2D_Bitmap is
          return;
       end if;
 
-      if X + Width >= Buffer.Width then
-         W := Buffer.Width - X - 1;
+      if X + Width > Buffer.Width then
+         W := Buffer.Width - X;
       else
          W := Width;
       end if;
 
-      if Y + Height >= Buffer.Height then
-         H := Buffer.Height - Y - 1;
+      if Y + Height > Buffer.Height then
+         H := Buffer.Height - Y;
       else
          H := Height;
       end if;
