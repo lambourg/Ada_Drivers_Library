@@ -69,7 +69,10 @@ package body RPi.Mailbox is
 
    procedure Mailbox_Write (Addr : System.Address; Channel : Mailbox_Channel)
    is
+      pragma Warnings (Off);
+      --  Addresses are expected to be 32-bit, even on the RPi3
       function To_U32 is new Ada.Unchecked_Conversion (System.Address, UInt32);
+      pragma Warnings (On);
    begin
       Mailbox_Write (To_U32 (Addr), Channel);
    end Mailbox_Write;
