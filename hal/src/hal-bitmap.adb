@@ -324,9 +324,10 @@ package body HAL.Bitmap is
      (Buffer : Bitmap_Buffer;
       Color  : Bitmap_Color)
    is
-      Col : constant UInt32 := Bitmap_Color_To_Word (Buffer.Color_Mode, Color);
    begin
-      Fill (Bitmap_Buffer'Class (Buffer), Col);
+      Fill_Rect (Bitmap_Buffer'Class (Buffer),
+                 Bitmap_Color_To_Word (Buffer.Color_Mode, Color),
+                 0, 0, Buffer.Width, Buffer.Height);
    end Fill;
 
    ----------
@@ -338,11 +339,9 @@ package body HAL.Bitmap is
       Color  : UInt32)
    is
    begin
-      for Y in 0 .. Buffer.Height - 1 loop
-         for X in 0 .. Buffer.Width - 1 loop
-            Set_Pixel (Buffer, X, Y, Color);
-         end loop;
-      end loop;
+      Fill_Rect (Bitmap_Buffer'Class (Buffer),
+                 Color,
+                 0, 0, Buffer.Width, Buffer.Height);
    end Fill;
 
    ---------------
