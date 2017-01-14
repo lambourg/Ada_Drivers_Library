@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 BOARDS = {'Crazyflie': ['ravenscar-sfp', 'ravenscar-full'],
-          'MicroBit': ['zfp'],
           'Native': None,
           'RPi2': ['ravenscar-sfp'],
           'RPi3': ['ravenscar-sfp'],
