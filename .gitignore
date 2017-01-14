@@ -10,3 +10,4 @@
 *.ci
 *.cswi
 *~
+gnatinspect*
