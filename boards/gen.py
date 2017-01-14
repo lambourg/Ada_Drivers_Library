@@ -4,6 +4,7 @@ BOARDS = {'Crazyflie': ['ravenscar-sfp', 'ravenscar-full'],
           'MicroBit': ['zfp'],
           'Native': None,
           'RPi2': ['ravenscar-sfp'],
+          'RPi3': ['ravenscar-sfp'],
           'OpenMV2': ['ravenscar-sfp', 'ravenscar-full'],
           'STM32F407Disco': ['ravenscar-sfp', 'ravenscar-full'],
           'STM32F429Disco': ['ravenscar-sfp', 'ravenscar-full'],
@@ -28,30 +29,20 @@ def gen_project(board, rts):
 
     cnt = 'aggregate library project %s is\n' % project_name
     cnt += '\n'
-    if board is None:
-        cnt += '   type Board_Type is\n'
-        boards = list(map(lambda x: x.lower(), BOARDS.keys()))
-        cnt += '     ("%s");\n' % '",\n      "'.join(sorted(boards))
-        cnt += '   Board : Board_Type := external("BOARD", "native");\n\n'
-        cnt += '   type RTS_Type is ("zfp", "ravenscar-sfp", "ravenscar-full");\n'
-        cnt += '   RTS : RTS_Type := external("RTS", "default");\n'
+    lower = board.lower()
+    cnt += '   Board := "%s";\n\n' % lower
+
+    if BOARDS[board] is not None:
+        if rts is not None:
+            cnt += '   RTS := "%s";\n' % rts
+        elif len(BOARDS[board]) == 1:
+            cnt += '   RTS := "%s";\n' % BOARDS[board][0]
+        else:
+            cnt += '   type RTS_Type is ("%s");\n' % \
+                   '", "'.join(BOARDS[board])
+            cnt += '   RTS : RTS_Type := external ("RTS", "%s");\n' % \
+                   BOARDS[board][0]
         cnt += '\n'
-
-    else:
-        lower = board.lower()
-        cnt += '   Board := "%s";\n\n' % lower
-
-        if BOARDS[board] is not None:
-            if rts is not None:
-                cnt += '   RTS := "%s";\n' % rts
-            elif len(BOARDS[board]) == 1:
-                cnt += '   RTS := "%s";\n' % BOARDS[board][0]
-            else:
-                cnt += '   type RTS_Type is ("%s");\n' % \
-                       '", "'.join(BOARDS[board])
-                cnt += '   RTS : RTS_Type := external ("RTS", "%s");\n' % \
-                       BOARDS[board][0]
-            cnt += '\n'
 
     cnt += '   type Build_Type is ("Debug", "Production");\n'
     cnt += '   Build : Build_Type := external ("BUILD", "Production");\n'
@@ -59,6 +50,8 @@ def gen_project(board, rts):
 
     if lower == 'native':
         pass
+    elif lower == 'rpi3':
+        cnt += '   for Target use "aarch64-elf";\n'
     else:
         cnt += '   for Target use "arm-eabi";\n'
     if lower == 'native':
@@ -79,7 +72,10 @@ def gen_project(board, rts):
     cnt += '   for external ("Obj_Suffix") use Obj_Suffix;\n'
     if rts is not None:
         cnt += '   for external ("RTS") use RTS;\n'
-    cnt += '   for Project_Files use (Board & "/board.gpr");\n'
+    if lower == 'rpi3':
+        cnt += '   for Project_Files use ("rpi2/board.gpr");\n'
+    else:
+        cnt += '   for Project_Files use (Board & "/board.gpr");\n'
     cnt += '\n'
     cnt += 'end %s;\n' % project_name
 
