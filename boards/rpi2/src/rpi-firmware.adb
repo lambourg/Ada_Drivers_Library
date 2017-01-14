@@ -82,8 +82,9 @@ package body RPi.Firmware is
 
    Initialized             : Boolean := False;
 
-   type Message_Pool is access all Byte_Array (1 .. Message_Pool_Size);
-   Pool                    : Message_Pool;
+   subtype Message_Pool is Byte_Array (1 .. Message_Pool_Size);
+   Pool                    : Message_Pool
+     with Address => System'To_Address (16#3ae00200#);
    P_Index                 : Natural := 0;
 
    protected Fw_Lock is
@@ -140,76 +141,76 @@ package body RPi.Firmware is
 
    procedure Initialize
    is
-      Alloc_Msg : Word_Array :=
-                    (0,
-                     Request_Code,
-
-                     ARM_To_VC_Tag_Code (Tag_Allocate_Memory),
-                     12,
-                     Request_Indicator,
-                     Message_Pool_Size, --  Size
-                     16, --  Alignment
-                     Mem_Flag_Direct or Mem_Flag_Hint_Permalock, --  Flags
-
-                     0);
-      Lock_Msg  : Word_Array :=
-                    (0,
-                     Request_Code,
-
-                     ARM_To_VC_Tag_Code (Tag_Lock_Memory),
-                     4,
-                     Request_Indicator,
-                     0, --  Value will hold the handle
-
-                     0);
-
-      Handle    : UInt32;
-      BUS_Addr  : UInt32;
-      Buf_Addr  : System.Address;
-      Res       : UInt32 with Unreferenced;
-
-      function As_Pool is new Ada.Unchecked_Conversion
-        (System.Address, Message_Pool);
+--        Alloc_Msg : Word_Array :=
+--                      (0,
+--                       Request_Code,
+--
+--                       ARM_To_VC_Tag_Code (Tag_Allocate_Memory),
+--                       12,
+--                       Request_Indicator,
+--                       Message_Pool_Size, --  Size
+--                       16, --  Alignment
+--                       Mem_Flag_Direct or Mem_Flag_Hint_Permalock, --  Flags
+--
+--                       0);
+--        Lock_Msg  : Word_Array :=
+--                      (0,
+--                       Request_Code,
+--
+--                       ARM_To_VC_Tag_Code (Tag_Lock_Memory),
+--                       4,
+--                       Request_Indicator,
+--                       0, --  Value will hold the handle
+--
+--                       0);
+--
+--        Handle    : UInt32;
+--        BUS_Addr  : UInt32;
+--        Buf_Addr  : System.Address;
+--        Res       : UInt32 with Unreferenced;
+--
+--        function As_Pool is new Ada.Unchecked_Conversion
+--          (System.Address, Message_Pool);
 
    begin
       if Initialized then
          return;
       end if;
 
-      Alloc_Msg (0) := Alloc_Msg'Length * 4;
-      Lock_Msg (0) := Lock_Msg'Length * 4;
+--        Alloc_Msg (0) := Alloc_Msg'Length * 4;
+--        Lock_Msg (0) := Lock_Msg'Length * 4;
+--
+--        --  Clean and invalidate so that GPU can read it
+--        Dcache_Flush_By_Range (Alloc_Msg'Address, Alloc_Msg'Length * 4);
+--        Mailbox_Write (Alloc_Msg'Address, Property_Tags_ARM_To_VC);
+--        Res := Mailbox_Read (Property_Tags_ARM_To_VC);
+--
+--        --  Retrieve the handle
+--        Handle := Alloc_Msg (5);
+--
+--        Lock_Msg (5) := Handle;
+--        Dcache_Flush_By_Range (Lock_Msg'Address, Lock_Msg'Length * 4);
+--        Mailbox_Write (Lock_Msg'Address, Property_Tags_ARM_To_VC);
+--        Res := Mailbox_Read (Property_Tags_ARM_To_VC);
+--
+--        --  Retrieve the BUS address
+--        BUS_Addr := Lock_Msg (5);
+--        Buf_Addr := To_Address (BUS_Addr and 16#3fff_ffff#);
+--
+--        Pool     := As_Pool (Buf_Addr);
+--
+--        if Pool /= null then
+      Initialized := True;
+--        end if;
 
-      --  Clean and invalidate so that GPU can read it
-      Dcache_Flush_By_Range (Alloc_Msg'Address, Alloc_Msg'Length * 4);
-      Mailbox_Write (Alloc_Msg'Address, Property_Tags_ARM_To_VC);
-      Res := Mailbox_Read (Property_Tags_ARM_To_VC);
-
-      --  Retrieve the handle
-      Handle := Alloc_Msg (5);
-
-      Lock_Msg (5) := Handle;
-      Dcache_Flush_By_Range (Lock_Msg'Address, Lock_Msg'Length * 4);
-      Mailbox_Write (Lock_Msg'Address, Property_Tags_ARM_To_VC);
-      Res := Mailbox_Read (Property_Tags_ARM_To_VC);
-
-      --  Retrieve the BUS address
-      BUS_Addr := Lock_Msg (5);
-      Buf_Addr := To_Address (BUS_Addr and 16#3fff_ffff#);
-
-      Pool     := As_Pool (Buf_Addr);
-
-      if Pool /= null then
-         Initialized := True;
-      end if;
-
-      if Debug then
-         if Initialized then
-            Put_Line ("Firmware message pool initialized at 0x" &
-                        Image8 (BUS_Addr));
-         else
-            Put_Line ("!!! Failed to init the message pool");
-         end if;
-      end if;
+--        if Debug then
+--           if Initialized then
+--              Put_Line ("Firmware message pool initialized at 0x" &
+--                          Image8 (BUS_Addr));
+--           else
+--              Put_Line ("!!! Failed to init the message pool");
+--           end if;
+--        end if;
    end Initialize;
 
    ------------
@@ -467,7 +468,7 @@ package body RPi.Firmware is
       Pool (P_Index + 1 .. P_Index + 4) := (others => 0);
 
       --  Call the mailbox
-      Mailbox_Write (Pool.all'Address, Property_Tags_ARM_To_VC);
+      Mailbox_Write (Pool'Address, Property_Tags_ARM_To_VC);
       Res := Mailbox_Read (Property_Tags_ARM_To_VC);
    end Do_Transaction;
 
