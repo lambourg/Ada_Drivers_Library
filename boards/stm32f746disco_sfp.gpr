@@ -7,27 +7,10 @@ aggregate library project STM32F746Disco_SFP is
    type Build_Type is ("Debug", "Production");
    Build : Build_Type := external ("BUILD", "Production");
 
-   case Board is
-      when "native" =>
-      when others =>
-         for Target use "arm-eabi";
-   end case;
+   for Target use "arm-eabi";
+   for Runtime ("Ada") use RTS & "-" & Board;
 
-   case Board is
-      when "native" =>
-      when "crazyflie" | "stm32f407disco" =>
-         for Runtime ("Ada") use RTS & "-stm32f4";
-      when others =>
-         for Runtime ("Ada") use RTS & "-" & Board;
-   end case;
-
-   Obj_Suffix := "";
-   case Board is
-      when "native" =>
-         Obj_Suffix := "native-" & Build;
-      when others =>
-         Obj_Suffix := RTS & "-" & Board & "-" & Build;
-   end case;
+   Obj_Suffix := RTS & "-" & Board & "-" & Build;
 
    for Library_Name use Board;
    for Library_Dir use "lib/" & Obj_Suffix;

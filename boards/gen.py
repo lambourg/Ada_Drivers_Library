@@ -3,6 +3,7 @@
 BOARDS = {'Crazyflie': ['ravenscar-sfp', 'ravenscar-full'],
           'MicroBit': ['zfp'],
           'Native': None,
+          'RPi2': ['ravenscar-sfp'],
           'OpenMV2': ['ravenscar-sfp', 'ravenscar-full'],
           'STM32F407Disco': ['ravenscar-sfp', 'ravenscar-full'],
           'STM32F429Disco': ['ravenscar-sfp', 'ravenscar-full'],
@@ -11,9 +12,8 @@ BOARDS = {'Crazyflie': ['ravenscar-sfp', 'ravenscar-full'],
           'STM32F769Disco': ['ravenscar-sfp', 'ravenscar-full']}
 
 def gen_project(board, rts):
-    if board is None:
-        project_name = 'Boards'
-    elif rts is None:
+    assert board is not None, "board is undefined"
+    if rts is None:
         project_name = board
     else:
         if rts == 'zfp':
@@ -57,27 +57,21 @@ def gen_project(board, rts):
     cnt += '   Build : Build_Type := external ("BUILD", "Production");\n'
     cnt += '\n'
 
-    cnt += '   case Board is\n'
-    cnt += '      when "native" =>\n'
-    cnt += '      when others =>\n'
-    cnt += '         for Target use "arm-eabi";\n'
-    cnt += '   end case;\n'
+    if lower == 'native':
+        pass
+    else:
+        cnt += '   for Target use "arm-eabi";\n'
+    if lower == 'native':
+        pass
+    elif lower in ('crazyflie', 'stm32f407disco'):
+        cnt += '   for Runtime ("Ada") use RTS & "-stm32f4";\n'
+    else:
+        cnt += '   for Runtime ("Ada") use RTS & "-" & Board;\n'
     cnt += '\n'
-    cnt += '   case Board is\n'
-    cnt += '      when "native" =>\n'
-    cnt += '      when "crazyflie" | "stm32f407disco" =>\n'
-    cnt += '         for Runtime ("Ada") use RTS & "-stm32f4";\n'
-    cnt += '      when others =>\n'
-    cnt += '         for Runtime ("Ada") use RTS & "-" & Board;\n'
-    cnt += '   end case;\n'
-    cnt += '\n'
-    cnt += '   Obj_Suffix := "";\n'
-    cnt += '   case Board is\n'
-    cnt += '      when "native" =>\n'
-    cnt += '         Obj_Suffix := "native-" & Build;\n'
-    cnt += '      when others =>\n'
-    cnt += '         Obj_Suffix := RTS & "-" & Board & "-" & Build;\n'
-    cnt += '   end case;\n'
+    if lower == 'native':
+        cnt += '   Obj_Suffix := "native-" & Build;\n'
+    else:
+        cnt += '   Obj_Suffix := RTS & "-" & Board & "-" & Build;\n'
     cnt += '\n'
     cnt += '   for Library_Name use Board;\n'
     cnt += '   for Library_Dir use "lib/" & Obj_Suffix;\n'
@@ -94,7 +88,6 @@ def gen_project(board, rts):
         fp.write(cnt)
 
 if __name__ == "__main__":
-    gen_project(None, None)
     for b in BOARDS:
         gen_project(b, None)
         if BOARDS[b] is not None and len(BOARDS[b]) > 1:
