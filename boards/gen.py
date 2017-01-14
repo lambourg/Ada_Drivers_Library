@@ -45,7 +45,7 @@ def gen_project(board, rts):
         cnt += '\n'
 
     cnt += '   type Build_Type is ("Debug", "Production");\n'
-    cnt += '   Build : Build_Type := external ("BUILD", "Production");\n'
+    cnt += '   Build : Build_Type := external ("PLATFORM_BUILD", "Production");\n'
     cnt += '\n'
 
     if lower == 'native':

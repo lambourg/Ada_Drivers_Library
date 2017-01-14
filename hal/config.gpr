@@ -7,7 +7,7 @@ abstract project Config is
    for Source_Dirs use ();
 
    type Build_Type is ("Debug", "Production");
-   Build : Build_Type := external ("BUILD", "Debug");
+   Build : Build_Type := external ("PLATFORM_BUILD", "Debug");
 
    --  Fixed by the board-specific aggregate project in <prefix>/boards
    Object_Subdir := external ("Obj_Suffix", "");

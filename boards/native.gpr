@@ -3,7 +3,7 @@ aggregate library project Native is
    Board := "native";
 
    type Build_Type is ("Debug", "Production");
-   Build : Build_Type := external ("BUILD", "Production");
+   Build : Build_Type := external ("PLATFORM_BUILD", "Production");
 
 
    Obj_Suffix := "native-" & Build;

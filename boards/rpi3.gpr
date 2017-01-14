@@ -5,7 +5,7 @@ aggregate library project RPi3 is
    RTS := "ravenscar-sfp";
 
    type Build_Type is ("Debug", "Production");
-   Build : Build_Type := external ("BUILD", "Production");
+   Build : Build_Type := external ("PLATFORM_BUILD", "Production");
 
    for Target use "aarch64-elf";
    for Runtime ("Ada") use RTS & "-" & Board;

@@ -5,7 +5,7 @@ aggregate library project Crazyflie_Full is
    RTS := "ravenscar-full";
 
    type Build_Type is ("Debug", "Production");
-   Build : Build_Type := external ("BUILD", "Production");
+   Build : Build_Type := external ("PLATFORM_BUILD", "Production");
 
    for Target use "arm-eabi";
    for Runtime ("Ada") use RTS & "-stm32f4";
