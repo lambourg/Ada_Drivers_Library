@@ -36,7 +36,12 @@ package RPi.Framebuffer is
 
    type Framebuffer_Display is limited private;
 
-   type Layer_Type is range 1 .. 2;
+   type Color_Depth_Type is range 1 .. 4;
+   --  Number of bytes per pixel
+   --  1: indexed colors
+   --  2: RGB565 mode
+   --  3: RGB888 mode
+   --  4: ARGB8888 mode
 
    type Alpha_Mode is
      (Alpha_Channel_Enabled,
@@ -44,11 +49,10 @@ package RPi.Framebuffer is
       Alpha_Channel_Ignored);
 
    procedure Initialize
-     (Display : in out Framebuffer_Display;
-      Width   : Natural;
-      Height  : Natural);
-
-   function Hidden_Layer (Display : Framebuffer_Display) return Layer_Type;
+     (Display     : in out Framebuffer_Display;
+      Width       : Natural;
+      Height      : Natural;
+      Color_Depth : Color_Depth_Type);
 
    function Hidden_Framebuffer
      (Display : Framebuffer_Display) return Bitmap_Buffer'Class;
@@ -66,13 +70,16 @@ package RPi.Framebuffer is
 
 private
 
-   type Buffer_Array is array (Layer_Type) of System.Address;
+   type Buffer_Type is range 1 .. 2;
+
+   type Buffer_Array is array (Buffer_Type) of System.Address;
 
    type Framebuffer_Display is record
-      FB           : Buffer_Array;
-      Width        : Natural;
-      Height       : Natural;
-      Active_Layer : Layer_Type := 1;
+      FB            : Buffer_Array;
+      Width         : Natural;
+      Height        : Natural;
+      Depth         : Color_Depth_Type;
+      Active_Buffer : Buffer_Type := 1;
    end record;
 
    function Get_Color_Mode

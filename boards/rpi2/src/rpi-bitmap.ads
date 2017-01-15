@@ -60,4 +60,7 @@ package RPi.Bitmap is
 
    overriding procedure Wait_Transfer (Buffer : RPi_Bitmap_Buffer);
 
+   function BPP (Buffer : RPi_Bitmap_Buffer) return Positive;
+   --  Bytes per pixel: only supports byte-aligned buffers
+
 end RPi.Bitmap;

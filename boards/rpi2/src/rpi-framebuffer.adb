@@ -50,9 +50,10 @@ package body RPi.Framebuffer is
    ----------------
 
    procedure Initialize
-     (Display : in out Framebuffer_Display;
-      Width   : Natural;
-      Height  : Natural)
+     (Display     : in out Framebuffer_Display;
+      Width       : Natural;
+      Height      : Natural;
+      Color_Depth : Color_Depth_Type)
    is
       Alloc_Data          : Word_Array := (16, 0);
       Alloc_Data_Offset   : Natural;
@@ -61,7 +62,7 @@ package body RPi.Framebuffer is
       Virtual_Size_Data   : constant Word_Array :=
                               (Unsigned_32 (Width), Unsigned_32 (Height * 2));
       Virtual_Offset_Data : constant Word_Array := (0, 0);
-      Depth_Data          : constant UInt32 := 16;
+      Depth_Data          : constant UInt32 := 8 * (UInt32 (Color_Depth));
       Generic_Offset      : Natural with Unreferenced;
 
       FB_Addr : BUS_Address;
@@ -90,7 +91,8 @@ package body RPi.Framebuffer is
       FB_Addr := BUS_Address (Alloc_Data (0));
       Display.FB :=
         (1 => To_ARM (FB_Addr),
-         2 => To_ARM (FB_Addr + BUS_Address (Width * Height * 2)));
+         2 => To_ARM (FB_Addr +
+               BUS_Address (Width * Height * Natural (Color_Depth))));
 
       if Debug then
          Put ("FB BUS address: 0x");
@@ -99,9 +101,10 @@ package body RPi.Framebuffer is
          Put_Line (Image8 (Alloc_Data (1)));
       end if;
 
-      Display.Width        := Width;
-      Display.Height       := Height;
-      Display.Active_Layer := 1;
+      Display.Width         := Width;
+      Display.Height        := Height;
+      Display.Active_Buffer := 1;
+      Display.Depth         := Color_Depth;
 
       --  Wait for screen on.
       delay until Clock + Seconds (1);
@@ -158,7 +161,7 @@ package body RPi.Framebuffer is
    is
       Data : Word_Array :=
                (1 => 0,
-                2 => (if Display.Active_Layer = 1
+                2 => (if Display.Active_Buffer = 1
                       then Unsigned_32 (Display.Height)
                       else 0));
 
@@ -167,18 +170,11 @@ package body RPi.Framebuffer is
       Fw_Request (Tag_Set_VSync);
 
       if Data (2) = 0 then
-         Display.Active_Layer := 1;
+         Display.Active_Buffer := 1;
       else
-         Display.Active_Layer := 2;
+         Display.Active_Buffer := 2;
       end if;
    end Flip;
-
-   ------------------
-   -- Hidden_Layer --
-   ------------------
-
-   function Hidden_Layer (Display : Framebuffer_Display) return Layer_Type
-   is (if Display.Active_Layer = 1 then 2 else 1);
 
    ------------------------
    -- Hidden_Framebuffer --
@@ -187,11 +183,22 @@ package body RPi.Framebuffer is
    function Hidden_Framebuffer
      (Display : Framebuffer_Display) return Bitmap_Buffer'Class
    is
+      function Hidden_Buf_Num
+        (Display : Framebuffer_Display) return Buffer_Type
+      is (if Display.Active_Buffer = 1 then 2 else 1);
+
+      Mode   : constant Bitmap_Color_Mode :=
+                 (case Display.Depth is
+                     when 1 => L_8,
+                     when 2 => RGB_565,
+                     when 3 => RGB_888,
+                     when 4 => ARGB_8888);
+
       Ret    : constant RPi.Bitmap.RPi_Bitmap_Buffer :=
-                 (Addr       => Display.FB (Hidden_Layer (Display)),
+                 (Addr       => Display.FB (Hidden_Buf_Num (Display)),
                   Width      => Display.Width,
                   Height     => Display.Height,
-                  Color_Mode => RGB_565,
+                  Color_Mode => Mode,
                   Swapped    => False);
    begin
       return Ret;

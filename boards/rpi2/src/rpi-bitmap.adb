@@ -51,9 +51,6 @@ package body RPi.Bitmap is
 
    DMA_SCB    : SCB_Array_Access := null;
 
-   BPP        : constant := 2;
-   --  Bytes per Pixel
-
    Initialized : Boolean := False;
 
    procedure Initialize;
@@ -329,6 +326,13 @@ package body RPi.Bitmap is
       DMA_Controller.Wait_Transfer;
    end Wait_Transfer;
 
+   ---------
+   -- BPP --
+   ---------
+
+   function BPP (Buffer : RPi_Bitmap_Buffer) return Positive
+   is (Bits_Per_Pixel (Buffer.Color_Mode) / 8);
+
    ---------------
    -- Fill_Rect --
    ---------------
@@ -342,9 +346,10 @@ package body RPi.Bitmap is
       Height      : Integer)
    is
       Offset      : constant Storage_Offset :=
-                      Storage_Offset ((X + Y * Buffer.Width) * BPP);
+                      Storage_Offset ((X + Y * Buffer.Width) * Buffer.BPP);
       Offset2     : constant Storage_Offset :=
-                      Offset + Storage_Offset (Buffer.Width * BPP);
+                      Offset +
+                        Storage_Offset (Buffer.Width * Buffer.BPP);
       Dest_Stride : Integer_16;
       Status      : Boolean;
       Index       : SCB_Index;
@@ -368,7 +373,7 @@ package body RPi.Bitmap is
          H := Height;
       end if;
 
-      Dest_Stride := Integer_16 (Buffer.Width - W) * BPP;
+      Dest_Stride := Integer_16 ((Buffer.Width - W) * Buffer.BPP);
 
       if W > 1 and then H > 1 then
          Num_Blocks := 2;
@@ -404,7 +409,7 @@ package body RPi.Bitmap is
          DMA_SCB (Index).Destination_Address := To_BUS (Buffer.Addr + Offset);
          DMA_SCB (Index).Transfer_Length :=
            (TD_Mode  => True,
-            X_Length => Unsigned_16 (BPP),
+            X_Length => Unsigned_16 (Buffer.BPP),
             Y_Length => UInt14 (W - 1),
             others   => <>);
          DMA_SCB (Index).Stride :=
@@ -432,10 +437,10 @@ package body RPi.Bitmap is
                Source_Address      => To_BUS (Buffer.Addr + Offset),
                Destination_Address => To_BUS (Buffer.Addr + Offset2),
                Transfer_Length     => (TD_Mode  => True,
-                                       X_Length => Unsigned_16 (BPP * W),
+                                       X_Length => Unsigned_16 (Buffer.BPP * W),
                                        Y_Length => UInt14 (H - 2),
                                        others   => <>),
-               Stride              => (S_STRIDE => Integer_16 ((-BPP) * W),
+               Stride              => (S_STRIDE => Integer_16 ((-Buffer.BPP) * W),
                                        D_STRIDE => Dest_Stride),
                Next_CB             => 0,
                others              => <>);
@@ -454,7 +459,7 @@ package body RPi.Bitmap is
             Source_Address      => To_BUS (DMA_SCB (Index).Reserved_7'Address),
             Destination_Address => To_BUS (Buffer.Addr + Offset),
             Transfer_Length     => (TD_Mode  => True,
-                                    X_Length => BPP,
+                                    X_Length => Unsigned_16 (Buffer.BPP),
                                     Y_Length => UInt14 (H - 1),
                                     others   => <>),
             Stride              => (S_STRIDE => 0,
@@ -488,19 +493,25 @@ package body RPi.Bitmap is
    is
       pragma Unreferenced (X_Bg, Y_Bg);
       Src_Offset : constant Storage_Offset :=
-                     Storage_Offset ((X_Src + Y_Src * Src_Buffer.Width) * BPP);
+                     Storage_Offset ((X_Src + Y_Src * Src_Buffer.Width) *
+                                       Dst_Buffer.BPP);
       Src_Stride : constant Integer_16 :=
-                     Integer_16 (Src_Buffer.Width - Width) * BPP;
+                     Integer_16 ((Src_Buffer.Width - Width) * Dst_Buffer.BPP);
       Dst_Offset : constant Storage_Offset :=
-                     Storage_Offset ((X_Dst + Y_Dst * Dst_Buffer.Width) * BPP);
+                     Storage_Offset ((X_Dst + Y_Dst * Dst_Buffer.Width) *
+                                       Dst_Buffer.BPP);
       Dst_Stride : constant Integer_16 :=
-                     Integer_16 (Dst_Buffer.Width - Width) * BPP;
+                     Integer_16 ((Dst_Buffer.Width - Width) * Dst_Buffer.BPP);
       Status     : Boolean;
       Index      : SCB_Index;
 
    begin
       if Width = 0 or else Height = 0 then
          return;
+      end if;
+
+      if Dst_Buffer.Color_Mode /= Src_Buffer.Color_Mode then
+         raise Constraint_Error with "Incompatible color modes";
       end if;
 
       if Bg_Buffer.Addr /= System.Null_Address then
@@ -525,7 +536,7 @@ package body RPi.Bitmap is
          Source_Address      => To_BUS (Src_Buffer.Addr + Src_Offset),
          Destination_Address => To_BUS (Dst_Buffer.Addr + Dst_Offset),
          Transfer_Length     => (TD_Mode  => True,
-                                 X_Length => Unsigned_16 (Width * BPP),
+                                 X_Length => Unsigned_16 (Width * Dst_Buffer.BPP),
                                  Y_Length => UInt14 (Height - 1),
                                  others   => <>),
          Stride              => (S_STRIDE => Src_Stride,
