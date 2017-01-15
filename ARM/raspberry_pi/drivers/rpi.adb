@@ -29,28 +29,24 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with System;
+with Interfaces; use Interfaces;
 
---  Mailboxes facilitate communication between the ARM and the VideoCore.
---  The mechanism is generic to the BCM SoC, but the actual messages depend
---  on the actual firmware loaded on the GPU.
-package RPi.Mailbox is
+package body RPi is
 
-   type Mailbox_Channel is range 0 .. 9;
-   Power_Management_Channel : constant Mailbox_Channel := 0;
-   Framebuffer_Channel      : constant Mailbox_Channel := 1;
-   Virtual_UART_Channel     : constant Mailbox_Channel := 2;
-   VCHIQ_Channel            : constant Mailbox_Channel := 3;
-   LEDs_Channel             : constant Mailbox_Channel := 4;
-   Buttons_Channel          : constant Mailbox_Channel := 5;
-   Touch_Screen_Channel     : constant Mailbox_Channel := 6;
-   Property_Tags_ARM_To_VC  : constant Mailbox_Channel := 8;
-   Property_Tags_VC_To_ARM  : constant Mailbox_Channel := 9;
+   ------------
+   -- Image8 --
+   ------------
 
-   procedure Mailbox_Write (Val : UInt32; Channel : Mailbox_Channel);
-   procedure Mailbox_Write (Addr : System.Address; Channel : Mailbox_Channel)
-     with Inline_Always;
+   function Image8 (V : UInt32) return String8
+   is
+      Res        : String8;
+      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
+   begin
+      for I in Res'Range loop
+         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
+      end loop;
 
-   function Mailbox_Read (Channel : Mailbox_Channel) return UInt32;
+      return Res;
+   end Image8;
 
-end RPi.Mailbox;
+end RPi;

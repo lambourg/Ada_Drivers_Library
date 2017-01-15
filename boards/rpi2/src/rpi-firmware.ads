@@ -29,8 +29,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with HAL;        use HAL;
-
 --  Mailbox messages for the Raspberri Pi firmware are documented at:
 --  https://github.com/raspberrypi/firmware/wiki/Mailboxes
 --
@@ -47,7 +45,10 @@ with HAL;        use HAL;
 --
 --  If you just need to send a single command, then you can use the simpler
 --  API:
---    Do_Request (Tag, Data);
+--    Fw_Request (Tag, Data);
+--  or
+--    Fw_Request_RO (Tag, value);
+--
 package RPi.Firmware is
 
    type ARM_To_VC_Tag is
@@ -132,51 +133,46 @@ package RPi.Firmware is
       Tag_Set_Cursor_State);
 
    type Device_Id is
-     (SD_Card,
-      UART0,
-      UART1,
-      USB_HCD,
-      I2C0,
-      I2C1,
-      I2C2,
-      SPI,
-      CCP2TX)
+     (SDCard_Device,
+      UART0_Device,
+      UART1_Device,
+      USB_HCD_Device,
+      I2C0_Device,
+      I2C1_Device,
+      I2C2_Device,
+      SPI_Device,
+      CCP2TX_Device)
      with Size => 32;
 
    type Clock_Id is
      (Reserved,
-      EMMC,
-      UART,
-      ARM,
-      Core,
-      V3D,
-      H264,
-      ISP,
-      SDRAM,
-      Pixel,
-      PWM)
+      EMMC_Clock,
+      UART_Clock,
+      ARM_Clock,
+      Core_Clock,
+      V3D_Clock,
+      H264_Clock,
+      ISP_Clock,
+      SDRAM_Clock,
+      Pixel_Clock,
+      PWM_Clock)
      with Size => 32;
 
    type Voltage_Id is
      (Reserved,
-      Core,
-      SDRAM_C,
-      SDRAM_P,
-      SDRAM_I)
+      Core_Voltage,
+      SDRAM_C_Voltage,
+      SDRAM_P_Voltage,
+      SDRAM_I_Voltage)
      with Size => 32;
 
-   type Device_State is
-     (Off,
-      On,
-      Not_Present)
-     with Size => 32;
+--     type Device_State is
+--       (Off,
+--        On,
+--        Not_Present)
+--       with Size => 32;
 
    procedure Initialize;
-
-   subtype String8 is String (1 .. 8);
-
-   function Image8 (V : UInt32) return String8;
-   --  Utility function to display the hexadecimal value of V
 
    --------------------
    -- SIMPLE REQUEST --
@@ -255,8 +251,13 @@ package RPi.Firmware is
    function Gen_Add_Message (Tag   : ARM_To_VC_Tag; Input : T) return Natural;
    --  Same as above, with a generic parameter
 
+   function Do_Transaction return Boolean;
+   --  Calls the firmware with the messages added using Add_Message above.
+   --  Returns False upon error.
+
    procedure Do_Transaction;
-   --  Calls the firmware with the messages added using Add_Message above
+   --  Calls the firmware with the messages added using Add_Message above.
+   --  Ignores the response status
 
    function Get_Result (Offset : Natural; Size : Natural) return Byte_Array;
    --  Returns the value of the data at Offset.

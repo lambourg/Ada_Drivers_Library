@@ -30,21 +30,13 @@
 ------------------------------------------------------------------------------
 
 with System;
-with System.Storage_Elements; use System.Storage_Elements;
 with Interfaces;              use Interfaces;
-
-with HAL;                     use HAL;
 
 package RPi.Regs.DMA is
 
    type DMA_Operation_Width is
      (Width_32bit,
       Width_128bit) with Size => 1;
-
-   subtype BUS_Address is Unsigned_32;
-
-   function To_BUS (Address : System.Address) return BUS_Address is
-     (BUS_Address ((To_Integer (Address) and 16#3fff_ffff#) or 16#C000_0000#));
 
    type DMA_INT_Status_Register is record
       Int0_Status : Boolean;

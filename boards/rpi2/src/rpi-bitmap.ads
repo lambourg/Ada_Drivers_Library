@@ -29,7 +29,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with HAL;        use HAL;
 with HAL.Bitmap; use HAL.Bitmap;
 
 --  Version of HAL.Bitmap taking advantage of DMA transfers.

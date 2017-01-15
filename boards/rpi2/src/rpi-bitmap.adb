@@ -32,21 +32,31 @@
 with System;                   use System;
 with System.Storage_Elements;  use System.Storage_Elements;
 with Interfaces;               use Interfaces;
+with Ada.Unchecked_Conversion;
+with Ada.Text_IO;              use Ada.Text_IO;
 
-with RPi.Regs.DMA; use RPi.Regs.DMA;
+with RPi.Regs.DMA;             use RPi.Regs.DMA;
+with RPi.Firmware.GPU_Memory;  use RPi.Firmware.GPU_Memory;
 
 package body RPi.Bitmap is
+
+   Debug : constant Boolean := True;
 
    DMA_Periph : DMA_Peripheral renames DMA_0;
 
    type SCB_Index is range 0 .. 100;
    subtype Valid_SCB_Index is SCB_Index range 1 .. SCB_Index'Last;
+   type SCB_Array is array (Valid_SCB_Index) of aliased DMA_Control_Block;
+   type SCB_Array_Access is access all SCB_Array;
 
-   DMA_SCB    : array (Valid_SCB_Index) of aliased DMA_Control_Block
-     with Import, Address => System'To_Address (16#3ae00000#);
+   DMA_SCB    : SCB_Array_Access := null;
 
    BPP        : constant := 2;
    --  Bytes per Pixel
+
+   Initialized : Boolean := False;
+
+   procedure Initialize;
 
    procedure DMA_Find_Free_SCB
      (Tail      : out SCB_Index;
@@ -73,6 +83,45 @@ package body RPi.Bitmap is
       DMA_Started     : Boolean := False;
       New_Block       : SCB_Index := 0;
    end DMA_Controller;
+
+   ----------------
+   -- Initialize --
+   ----------------
+
+   procedure Initialize
+   is
+      Handle    : Memory_Handle;
+      BUS_Addr  : BUS_Address;
+
+      function As_SCB_Array is new Ada.Unchecked_Conversion
+        (System.Address, SCB_Array_Access);
+
+   begin
+      if Initialized then
+         return;
+      end if;
+
+      Memory_Allocate
+        (SCB_Array'Size / 8,
+         32,
+         Mem_Flag_L1_Non_Allocating or
+           Mem_Flag_Hint_Permalock or Mem_Flag_Zero,
+         Handle);
+
+      if Handle = Invalid_Memory_Handle then
+         Put_Line ("Cannot allocate GPU memory");
+      end if;
+
+      Memory_Lock (Handle, BUS_Addr);
+
+      if Debug then
+         Put_Line ("DMA SCBs for Bitmap operations BUS addr at 0x" &
+                     Image8 (UInt32 (BUS_Addr)));
+      end if;
+
+      DMA_SCB := As_SCB_Array (To_ARM (BUS_Addr));
+      Initialized := DMA_SCB /= null;
+   end Initialize;
 
    --------------------
    -- DMA_Controller --
@@ -126,6 +175,10 @@ package body RPi.Bitmap is
             Index := 0;
 
             return;
+         end if;
+
+         if not Initialized then
+            Initialize;
          end if;
 
          loop

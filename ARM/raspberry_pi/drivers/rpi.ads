@@ -29,8 +29,29 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with System.Storage_Elements;
+with HAL; use HAL;
+
 package RPi is
 
-   pragma Pure;
+   type BUS_Address is new UInt32;
+
+   function To_BUS (Address : System.Address) return BUS_Address;
+   function To_ARM (Address : BUS_Address) return System.Address;
+
+   subtype String8 is String (1 .. 8);
+
+   function Image8 (V : UInt32) return String8;
+   --  Utility function to display the hexadecimal value of V
+
+private
+
+   use type System.Storage_Elements.Integer_Address;
+
+   function To_BUS (Address : System.Address) return BUS_Address is
+     ((BUS_Address ((System.Storage_Elements.To_Integer (Address)))
+       and 16#3fff_ffff#) or 16#C000_0000#);
+   function To_ARM (Address : BUS_Address) return System.Address is
+      (System'To_Address (Address and 16#3FFF_FFFF#));
 
 end RPi;

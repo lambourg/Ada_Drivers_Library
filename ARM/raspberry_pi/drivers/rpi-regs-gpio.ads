@@ -31,8 +31,6 @@
 
 with System;
 
-with HAL; use HAL;
-
 package RPi.Regs.GPIO is
 
    type GPIO_Pin is range 0 .. 53;

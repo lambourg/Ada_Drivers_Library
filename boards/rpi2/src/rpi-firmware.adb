@@ -29,7 +29,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with System.Storage_Elements;  use System.Storage_Elements;
+with System;
 with Interfaces;               use Interfaces;
 pragma Warnings (Off);
 with Interfaces.Cache;         use Interfaces.Cache;
@@ -38,6 +38,7 @@ with Ada.Text_IO;              use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 
 with RPi.Mailbox;              use RPi.Mailbox;
+with RPi.Firmware.GPU_Memory;
 
 ------------------
 -- RPi.Firmware --
@@ -51,41 +52,15 @@ package body RPi.Firmware is
    Request_Indicator  : constant UInt32 := 0;
 --     Response_Indicator : constant UInt32 := 16#8000_0000#;
 --     Response_Success   : constant UInt32 := 16#8000_0000#;
---     Response_Error     : constant UInt32 := 16#8000_0001#;
+   Response_Error     : constant UInt32 := 16#8000_0001#;
 
    Message_Pool_Size  : constant := 4096;
 
---     Mem_Flag_Normal         : constant UInt32 := 2#000_0000#;
-   --  normal allocating alias. Don't use from ARM
+   Initialized        : Boolean := False;
 
-   Mem_Flag_Discardable    : constant UInt32 := 2#000_0001#;
-   --  can be resized to 0 at any time. Use for cached data
-
-   Mem_Flag_Direct         : constant UInt32 := 2#000_0100#;
-   --  0xC alias uncached
-
---     Mem_Flag_Coherent       : constant UInt32 := 2#000_1000#;
-   --  0x8 alias. Non-allocating in L2 but coherent
-
---     Mem_Flag_L1_Non_Allocating : constant UInt32 :=
---                                    Mem_Flag_Direct or Mem_Flag_Coherent;
-   --  Allocating in L2
-
---     Mem_Flag_Zero           : constant UInt32 := 2#001_0000#;
-   --  Initialise buffer to all zeros
-
---     Mem_Flag_No_Init        : constant UInt32 := 2#010_0000#;
-   --  Don't initialize (default is initialise to ones)
-
-   Mem_Flag_Hint_Permalock : constant UInt32 := 2#100_0000#;
-   --  Likely to be locked for long periods of time.
-
-   Initialized             : Boolean := False;
-
-   subtype Message_Pool is Byte_Array (1 .. Message_Pool_Size);
-   Pool                    : Message_Pool
-     with Address => System'To_Address (16#3ae00200#);
-   P_Index                 : Natural := 0;
+   type Message_Pool is access Byte_Array (1 .. Message_Pool_Size);
+   Pool               : Message_Pool := null;
+   P_Index            : Natural := 0;
 
    protected Fw_Lock is
       entry Lock;
@@ -94,20 +69,9 @@ package body RPi.Firmware is
       Unlocked : Boolean := True;
    end Fw_Lock;
 
-   --  Kill the warning on the Pi3 that complains about mismatch between
-   --  64-bit addresses and UInt32. This is expected as BUS address are 32-bit
-   --  on the Pi anyway
-   pragma Warnings (Off);
-
-   function To_Unsigned_32 is new Ada.Unchecked_Conversion
-     (System.Address, UInt32);
-   function To_Address is new Ada.Unchecked_Conversion
-     (UInt32, System.Address);
-
-   pragma Warnings (On);
-
    subtype B4 is Byte_Array (1 .. 4);
    function As_Byte_Array is new Ada.Unchecked_Conversion (UInt32, B4);
+   function As_UInt32 is new Ada.Unchecked_Conversion (B4, UInt32);
 
    -------------
    -- Fw_Lock --
@@ -141,100 +105,54 @@ package body RPi.Firmware is
 
    procedure Initialize
    is
---        Alloc_Msg : Word_Array :=
---                      (0,
---                       Request_Code,
---
---                       ARM_To_VC_Tag_Code (Tag_Allocate_Memory),
---                       12,
---                       Request_Indicator,
---                       Message_Pool_Size, --  Size
---                       16, --  Alignment
---                       Mem_Flag_Direct or Mem_Flag_Hint_Permalock, --  Flags
---
---                       0);
---        Lock_Msg  : Word_Array :=
---                      (0,
---                       Request_Code,
---
---                       ARM_To_VC_Tag_Code (Tag_Lock_Memory),
---                       4,
---                       Request_Indicator,
---                       0, --  Value will hold the handle
---
---                       0);
---
---        Handle    : UInt32;
---        BUS_Addr  : UInt32;
---        Buf_Addr  : System.Address;
---        Res       : UInt32 with Unreferenced;
---
---        function As_Pool is new Ada.Unchecked_Conversion
---          (System.Address, Message_Pool);
+      use RPi.Firmware.GPU_Memory;
+      Handle    : Memory_Handle;
+      BUS_Addr  : BUS_Address;
+      Buf_Addr  : System.Address;
+
+      function As_Pool is new Ada.Unchecked_Conversion
+        (System.Address, Message_Pool);
 
    begin
       if Initialized then
          return;
       end if;
 
---        Alloc_Msg (0) := Alloc_Msg'Length * 4;
---        Lock_Msg (0) := Lock_Msg'Length * 4;
---
---        --  Clean and invalidate so that GPU can read it
---        Dcache_Flush_By_Range (Alloc_Msg'Address, Alloc_Msg'Length * 4);
---        Mailbox_Write (Alloc_Msg'Address, Property_Tags_ARM_To_VC);
---        Res := Mailbox_Read (Property_Tags_ARM_To_VC);
---
---        --  Retrieve the handle
---        Handle := Alloc_Msg (5);
---
---        Lock_Msg (5) := Handle;
---        Dcache_Flush_By_Range (Lock_Msg'Address, Lock_Msg'Length * 4);
---        Mailbox_Write (Lock_Msg'Address, Property_Tags_ARM_To_VC);
---        Res := Mailbox_Read (Property_Tags_ARM_To_VC);
---
---        --  Retrieve the BUS address
---        BUS_Addr := Lock_Msg (5);
---        Buf_Addr := To_Address (BUS_Addr and 16#3fff_ffff#);
---
---        Pool     := As_Pool (Buf_Addr);
---
---        if Pool /= null then
-      Initialized := True;
---        end if;
+      --  We allocate the buffer for the Firmware messages in the GPU memory,
+      --  so that we don't have to perform cache operations to communicate with
+      --  it.
+      Memory_Allocate
+        (Message_Pool_Size * 4,
+         16,
+         Mem_Flag_L1_Non_Allocating or
+           Mem_Flag_Hint_Permalock or Mem_Flag_No_Init,
+         Handle);
 
---        if Debug then
---           if Initialized then
---              Put_Line ("Firmware message pool initialized at 0x" &
---                          Image8 (BUS_Addr));
---           else
---              Put_Line ("!!! Failed to init the message pool");
---           end if;
---        end if;
+      if Handle = Invalid_Memory_Handle then
+         Put_Line ("Cannot allocate GPU memory");
+      end if;
+
+      Memory_Lock (Handle, BUS_Addr);
+
+      if Debug then
+         Put_Line ("Firmware message pool BUS addr at 0x" &
+                     Image8 (UInt32 (BUS_Addr)));
+      end if;
+
+      Buf_Addr := To_ARM (BUS_Addr);
+      Pool     := As_Pool (Buf_Addr);
+
+      if Pool /= null then
+         Initialized := True;
+      end if;
    end Initialize;
-
-   ------------
-   -- Image8 --
-   ------------
-
-   function Image8 (V : UInt32) return String8
-   is
-      Res        : String8;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
-
-      return Res;
-   end Image8;
 
    ----------------
    -- Do_Request --
    ----------------
 
    procedure Fw_Request
-     (Tag   : ARM_To_VC_Tag)
+     (Tag : ARM_To_VC_Tag)
    is
    begin
       Lock;
@@ -268,9 +186,13 @@ package body RPi.Firmware is
      (Tag   : ARM_To_VC_Tag;
       Input : in out Word_Array)
    is
-      BA : Byte_Array (1 .. Input'Length * 4) with Address => Input'Address;
+      Offset : Natural;
    begin
-      Fw_Request (Tag, BA);
+      Lock;
+      Offset := Add_Message (Tag, Input);
+      Do_Transaction;
+      Input := Get_Result (Offset, Input'Length);
+      Unlock;
    end Fw_Request;
 
    ----------------
@@ -368,7 +290,7 @@ package body RPi.Firmware is
          Initialize;
       end if;
 
-      Pool (1 .. 4) := As_Byte_Array (0);
+      Pool (1 .. 4) := (others => 0);
       Pool (5 .. 8) := As_Byte_Array (Request_Code);
 
       P_Index := 8;
@@ -411,10 +333,15 @@ package body RPi.Firmware is
       Pool (P_Index + 1 .. P_Index + 4) :=
         As_Byte_Array (ARM_To_VC_Tag_Code (Tag));
       Pool (P_Index + 5 .. P_Index + 8) := As_Byte_Array (Input'Length);
-      Pool (P_Index + 9 .. P_Index + 12) := As_Byte_Array (Request_Indicator);
+      Pool (P_Index + 9 .. P_Index + 12) :=
+        As_Byte_Array (Request_Indicator or Input'Length);
       Ret := P_Index + 13;
       Pool (Ret .. Ret + Input'Length - 1) := Input;
       P_Index := Ret + Input'Length - 1;
+
+      if P_Index mod 4 /= 0 then
+         P_Index := P_Index + 4 - (P_Index mod 4);
+      end if;
 
       return Ret;
    end Add_Message;
@@ -460,7 +387,20 @@ package body RPi.Firmware is
 
    procedure Do_Transaction
    is
+      Dead : Boolean with Unreferenced;
+   begin
+      Dead := Do_Transaction;
+   end Do_Transaction;
+
+   --------------------
+   -- Do_Transaction --
+   --------------------
+
+   function Do_Transaction return Boolean
+   is
       Res : Unsigned_32 with Unreferenced;
+      Ret : Unsigned_32;
+
    begin
       --  Message size
       Pool (1 .. 4) := As_Byte_Array (UInt32 (P_Index + 4));
@@ -468,8 +408,11 @@ package body RPi.Firmware is
       Pool (P_Index + 1 .. P_Index + 4) := (others => 0);
 
       --  Call the mailbox
-      Mailbox_Write (Pool'Address, Property_Tags_ARM_To_VC);
+      Mailbox_Write (Pool.all'Address, Property_Tags_ARM_To_VC);
       Res := Mailbox_Read (Property_Tags_ARM_To_VC);
+
+      Ret := As_UInt32 (Pool (5 .. 8));
+      return Ret /= Response_Error;
    end Do_Transaction;
 
    ----------------

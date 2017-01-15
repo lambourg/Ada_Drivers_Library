@@ -36,10 +36,6 @@ with Ada.Real_Time;            use Ada.Real_Time;
 with Ada.Text_IO;              use Ada.Text_IO;
 
 with Interfaces;               use Interfaces;
---  with Interfaces.Raspberry_Pi;  use Interfaces.Raspberry_Pi;
---  with Interfaces.ARM_V7AR;      use Interfaces.ARM_V7AR;
-
-with HAL;                      use HAL;
 
 with RPi.Bitmap;
 with RPi.Firmware;             use RPi.Firmware;
@@ -47,12 +43,7 @@ with RPi.Regs.DMA;             use RPi.Regs.DMA;
 
 package body RPi.Framebuffer is
 
---     Tag_Get_Max_Clock_Rate : constant Unsigned_32 := 16#3_0004#;
---     Tag_Set_Clock_Rate     : constant Unsigned_32 := 16#3_8002#;
    Debug : constant Boolean := True;
-
-   function To_Address is new Ada.Unchecked_Conversion
-     (Unsigned_32, System.Address);
 
    ----------------
    -- Initialize --
@@ -73,7 +64,7 @@ package body RPi.Framebuffer is
       Depth_Data          : constant UInt32 := 16;
       Generic_Offset      : Natural with Unreferenced;
 
-      FB_Addr : Unsigned_32;
+      FB_Addr : BUS_Address;
 
    begin
       RPi.Firmware.Lock;
@@ -96,16 +87,14 @@ package body RPi.Framebuffer is
       RPi.Firmware.Unlock;
 
       --  Map to uncached address
-      FB_Addr := (Alloc_Data (0) and 16#3fff_ffff#);
+      FB_Addr := BUS_Address (Alloc_Data (0));
       Display.FB :=
-        (1 => To_Address (FB_Addr),
-         2 => To_Address (FB_Addr + Unsigned_32 (Width * Height * 2)));
+        (1 => To_ARM (FB_Addr),
+         2 => To_ARM (FB_Addr + BUS_Address (Width * Height * 2)));
 
       if Debug then
-         Put ("FB PHY address: 0x");
-         Put_Line (Image8 (Alloc_Data (0)));
-         Put ("FB VIRT address: 0x");
-         Put_Line (Image8 (FB_Addr));
+         Put ("FB BUS address: 0x");
+         Put_Line (Image8 (UInt32 (FB_Addr)));
          Put ("FB size: 0x");
          Put_Line (Image8 (Alloc_Data (1)));
       end if;
