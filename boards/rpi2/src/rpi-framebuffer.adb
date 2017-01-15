@@ -38,12 +38,13 @@ with Ada.Text_IO;              use Ada.Text_IO;
 with Interfaces;               use Interfaces;
 
 with RPi.Bitmap;
+with RPi.DMA;                  use RPi.DMA;
 with RPi.Firmware;             use RPi.Firmware;
-with RPi.Regs.DMA;             use RPi.Regs.DMA;
+with Rpi_Board;
 
 package body RPi.Framebuffer is
 
-   Debug : constant Boolean := True;
+   Debug : constant Boolean := False;
 
    ----------------
    -- Initialize --
@@ -116,16 +117,11 @@ package body RPi.Framebuffer is
       if Debug then
          Put_Line ("Enabling the DMA channel for fb purpose...");
       end if;
-      DMA_Enable.Enable_0 := True;
-      delay until Clock + Milliseconds (20);
-      DMA_0.CS.Reset := True;
-      delay until Clock + Milliseconds (200);
-      DMA_0.CS :=
-        (Priority       => 7,
-         Panic_Priority => 7,
-         Disable_Debug  => True,
-         Ended          => True,
-         others         => <>);
+
+      --  The bitmap API requires DMA0 to accelerate the transfers.
+      --  Let's use a pretty large number of control blocks to allow chaining
+      --  those operations
+      Initialize (Rpi_Board.DMA_0, 800);
    end Initialize;
 
    -----------

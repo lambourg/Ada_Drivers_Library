@@ -46,7 +46,7 @@ with RPi.Firmware.GPU_Memory;
 
 package body RPi.Firmware is
 
-   Debug              : constant Boolean := True;
+   Debug              : constant Boolean := False;
 
    Request_Code       : constant UInt32 := 16#0#;
    Request_Indicator  : constant UInt32 := 0;
