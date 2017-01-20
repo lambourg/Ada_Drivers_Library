@@ -1,6 +1,35 @@
-with Ada.Real_Time; use Ada.Real_Time;
+------------------------------------------------------------------------------
+--                                                                          --
+--                     Copyright (C) 2015-2017, AdaCore                     --
+--                                                                          --
+--  Redistribution and use in source and binary forms, with or without      --
+--  modification, are permitted provided that the following conditions are  --
+--  met:                                                                    --
+--     1. Redistributions of source code must retain the above copyright    --
+--        notice, this list of conditions and the following disclaimer.     --
+--     2. Redistributions in binary form must reproduce the above copyright --
+--        notice, this list of conditions and the following disclaimer in   --
+--        the documentation and/or other materials provided with the        --
+--        distribution.                                                     --
+--     3. Neither the name of the copyright holder nor the names of its     --
+--        contributors may be used to endorse or promote products derived   --
+--        from this software without specific prior written permission.     --
+--                                                                          --
+--   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    --
+--   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      --
+--   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR  --
+--   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT   --
+--   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, --
+--   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       --
+--   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,  --
+--   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY  --
+--   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT    --
+--   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE  --
+--   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.   --
+--                                                                          --
+------------------------------------------------------------------------------
 
-package body HAL.SDCard is
+package body HAL.SDMMC is
 
    procedure Convert_Card_Identification_Data_Register
      (W0, W1, W2, W3 : Unsigned_32;
@@ -41,7 +70,7 @@ package body HAL.SDCard is
    --------------
 
    procedure Send_Cmd
-     (This   : in out SDCard_Driver'Class;
+     (This   : in out SDMMC_Driver'Class;
       Cmd    : SD_Command;
       Arg    : Unsigned_32;
       Status : out SD_Error) is
@@ -54,7 +83,7 @@ package body HAL.SDCard is
    ---------------
 
    procedure Send_ACmd
-     (This   : in out SDCard_Driver'Class;
+     (This   : in out SDMMC_Driver'Class;
       Cmd    : SD_Specific_Command;
       Rca    : Unsigned_16;
       Arg    : Unsigned_32;
@@ -104,7 +133,7 @@ package body HAL.SDCard is
    ---------------------------------
 
    procedure Card_Identification_Process
-     (Driver : in out SDCard_Driver'Class;
+     (This   : in out SDMMC_Driver'Class;
       Info   : out Card_Information;
       Status : out SD_Error)
    is
@@ -114,14 +143,14 @@ package body HAL.SDCard is
 
    begin
       --  Reset controller
-      Driver.Reset (Status);
+      This.Reset (Status);
 
       if Status /= OK then
          return;
       end if;
 
       --  CMD0: Sets the SDCard state to Idle
-      Send_Cmd (Driver, Go_Idle_State, 0, Status);
+      Send_Cmd (This, Go_Idle_State, 0, Status);
 
       if Status /= OK then
          return;
@@ -130,13 +159,13 @@ package body HAL.SDCard is
       --  CMD8: IF_Cond, voltage supplied: 0x1 (2.7V - 3.6V)
       --  It is mandatory for the host compliant to Physical Spec v2.00
       --  to send CMD8 before ACMD41
-      Send_Cmd (Driver, Send_If_Cond, 16#1a5#, Status);
+      Send_Cmd (This, Send_If_Cond, 16#1a5#, Status);
 
       if Status = OK then
          --  at least SD Card 2.0
          Info.Card_Type := STD_Capacity_SD_Card_v2_0;
 
-         Read_Rsp48 (Driver, Rsp);
+         Read_Rsp48 (This, Rsp);
 
          if (Rsp and 16#fff#) /= 16#1a5# then
             --  Bad voltage or bad pattern.
@@ -149,12 +178,13 @@ package body HAL.SDCard is
       end if;
 
       for I in 1 .. 5 loop
-         delay until Clock + Milliseconds (200);
+         This.Delay_Milliseconds (200);
 
          --  CMD55: APP_CMD
          --  This is done manually to handle error (this command is not
          --  supported by mmc).
-         Send_Cmd (Driver, Cmd_Desc (App_Cmd), 0, Status);
+         Send_Cmd (This, Cmd_Desc (App_Cmd), 0, Status);
+
          if Status /= OK then
             if Status = Command_Timeout_Error
               and then I = 1
@@ -170,12 +200,12 @@ package body HAL.SDCard is
          --  ACMD41: SD_SEND_OP_COND (no crc check)
          --  Arg: HCS=1, XPC=0, S18R=0
          Send_Cmd
-           (Driver, Acmd_Desc (SD_App_Send_Op_Cond), 16#40ff_0000#, Status);
+           (This, Acmd_Desc (SD_App_Send_Op_Cond), 16#40ff_0000#, Status);
          if Status /= OK then
             return;
          end if;
 
-         Read_Rsp48 (Driver, Rsp);
+         Read_Rsp48 (This, Rsp);
 
          if (Rsp and SD_OCR_High_Capacity) = SD_OCR_High_Capacity then
             Info.Card_Type := High_Capacity_SD_Card;
@@ -194,15 +224,15 @@ package body HAL.SDCard is
         and then Info.Card_Type = Multimedia_Card
       then
          for I in 1 .. 5 loop
-            delay until Clock + Milliseconds (200);
+            This.Delay_Milliseconds (200);
 
             --  CMD1: SEND_OP_COND query voltage
-            Send_Cmd (Driver, Cmd_Desc (Send_Op_Cond), 16#00ff_8000#, Status);
+            Send_Cmd (This, Cmd_Desc (Send_Op_Cond), 16#00ff_8000#, Status);
             if Status /= OK then
                return;
             end if;
 
-            Read_Rsp48 (Driver, Rsp);
+            Read_Rsp48 (This, Rsp);
 
             if (Rsp and SD_OCR_Power_Up) = 0 then
                Status := Error;
@@ -224,12 +254,12 @@ package body HAL.SDCard is
       --  TODO: Switch voltage
 
       --  CMD2: ALL_SEND_CID (136 bits)
-      Send_Cmd (Driver, All_Send_CID, 0, Status);
+      Send_Cmd (This, All_Send_CID, 0, Status);
       if Status /= OK then
          return;
       end if;
 
-      Read_Rsp136 (Driver, W0, W1, W2, W3);
+      Read_Rsp136 (This, W0, W1, W2, W3);
       Convert_Card_Identification_Data_Register (W0, W1, W2, W3, Info.SD_CID);
 
       --  CMD3: SEND_RELATIVE_ADDR
@@ -240,7 +270,7 @@ package body HAL.SDCard is
             Rca := 0;
       end case;
 
-      Send_Cmd (Driver, Send_Relative_Addr, Rca, Status);
+      Send_Cmd (This, Send_Relative_Addr, Rca, Status);
       if Status /= OK then
          return;
       end if;
@@ -248,7 +278,7 @@ package body HAL.SDCard is
          when Multimedia_Card =>
             null;
          when others =>
-            Read_Rsp48 (Driver, Rsp);
+            Read_Rsp48 (This, Rsp);
             Rca := Rsp and 16#ffff_0000#;
             if (Rsp and 16#e100#) /= 16#0100# then
                return;
@@ -259,28 +289,28 @@ package body HAL.SDCard is
       --  Switch to 25Mhz
       case Info.Card_Type is
          when Multimedia_Card =>
-            Set_Clock (Driver, Get_Transfer_Rate (Info.SD_CSD));
+            Set_Clock (This, Get_Transfer_Rate (Info.SD_CSD));
          when STD_Capacity_SD_Card_V1_1
            | STD_Capacity_SD_Card_v2_0
            | High_Capacity_SD_Card =>
-            Set_Clock (Driver, 25_000_000);
+            Set_Clock (This, 25_000_000);
          when others =>
             --  Not yet handled
             raise Program_Error;
       end case;
 
       --  CMD10: SEND_CID (136 bits)
-      Send_Cmd (Driver, Send_CID, Rca, Status);
+      Send_Cmd (This, Send_CID, Rca, Status);
       if Status /= OK then
          return;
       end if;
 
       --  CMD9: SEND_CSD
-      Send_Cmd (Driver, Send_CSD, Rca, Status);
+      Send_Cmd (This, Send_CSD, Rca, Status);
       if Status /= OK then
          return;
       end if;
-      Read_Rsp136 (Driver, W0, W1, W2, W3);
+      Read_Rsp136 (This, W0, W1, W2, W3);
       Convert_Card_Specific_Data_Register
         (W0, W1, W2, W3, Info.Card_Type, Info.SD_CSD);
       Info.Card_Capacity :=
@@ -289,13 +319,13 @@ package body HAL.SDCard is
         Compute_Card_Block_Size (Info.SD_CSD, Info.Card_Type);
 
       --  CMD7: SELECT
-      Send_Cmd (Driver, Select_Card, Rca, Status);
+      Send_Cmd (This, Select_Card, Rca, Status);
       if Status /= OK then
          return;
       end if;
 
       --  CMD13: STATUS
-      Send_Cmd (Driver, Send_Status, Rca, Status);
+      Send_Cmd (This, Send_Status, Rca, Status);
       if Status /= OK then
          return;
       end if;
@@ -305,11 +335,11 @@ package body HAL.SDCard is
          when STD_Capacity_SD_Card_V1_1
            | STD_Capacity_SD_Card_v2_0
            | High_Capacity_SD_Card =>
-            Send_ACmd (Driver, SD_App_Set_Bus_Width, Info.RCA, 2, Status);
+            Send_ACmd (This, SD_App_Set_Bus_Width, Info.RCA, 2, Status);
             if Status /= OK then
                return;
             else
-               Set_Bus_Size (Driver, Wide_Bus_4B);
+               Set_Bus_Size (This, Wide_Bus_4B);
             end if;
          when others =>
             null;
@@ -323,7 +353,7 @@ package body HAL.SDCard is
             Switch_Status : Switch_Status_Type;
          begin
             --  CMD6
-            Read_Cmd (Driver, Cmd_Desc (Switch_Func), 16#00_fffff0#,
+            Read_Cmd (This, Cmd_Desc (Switch_Func), 16#00_fffff0#,
                       Switch_Status'Address, 512 / 8, Status);
             if Status /= OK then
                return;
@@ -336,14 +366,14 @@ package body HAL.SDCard is
 
             --  Switch tp 50Mhz if possible.
             if (Switch_Status (4) and 2**(16 + 1)) /= 0 then
-               Read_Cmd (Driver, Cmd_Desc (Switch_Func), 16#80_fffff1#,
+               Read_Cmd (This, Cmd_Desc (Switch_Func), 16#80_fffff1#,
                          Switch_Status'Address, 512 / 8, Status);
                if Status /= OK then
                   return;
                end if;
 
                --  Switch to 50Mhz
-               Set_Clock (Driver, 50_000_000);
+               Set_Clock (This, 50_000_000);
             end if;
          end;
       end if;
@@ -354,7 +384,7 @@ package body HAL.SDCard is
    --------------
 
    procedure Read_SCR
-     (Driver : in out SDCard_Driver'Class;
+     (This   : in out SDMMC_Driver'Class;
       Info   : Card_Information;
       SCR    : out SDCard_Configuration_Register;
       Status : out SD_Error)
@@ -366,13 +396,18 @@ package body HAL.SDCard is
    begin
       Rca := Shift_Left (Unsigned_32 (Info.RCA), 16);
 
-      Send_Cmd (Driver, App_Cmd, Rca, Status);
+      Send_Cmd (This, App_Cmd, Rca, Status);
       if Status /= OK then
          return;
       end if;
 
-      Read_Cmd (Driver, Acmd_Desc (SD_App_Send_SCR), 0,
-                Tmp'Address, 8, Status);
+      Read_Cmd
+        (This,
+         Cmd    => Acmd_Desc (SD_App_Send_SCR),
+         Arg    => 0,
+         Buf    => Tmp'Address,
+         Len    => 8,
+         Status => Status);
 
       if Status /= OK then
          return;
@@ -441,8 +476,9 @@ package body HAL.SDCard is
 
    procedure Convert_Card_Specific_Data_Register
      (W0, W1, W2, W3 : Unsigned_32;
-      Card_Type : Supported_SD_Memory_Cards;
-      CSD : out Card_Specific_Data_Register) is
+      Card_Type      : Supported_SD_Memory_Cards;
+      CSD            : out Card_Specific_Data_Register)
+   is
       Tmp : Byte;
    begin
       --  Analysis of CSD Byte 0
@@ -565,7 +601,8 @@ package body HAL.SDCard is
 
    function Compute_Card_Capacity
      (CSD       : Card_Specific_Data_Register;
-      Card_Type : Supported_SD_Memory_Cards) return Unsigned_64 is
+      Card_Type : Supported_SD_Memory_Cards) return Unsigned_64
+   is
    begin
       if Card_Type = Multimedia_Card
         or else CSD.CSD_Structure = 0
@@ -586,7 +623,8 @@ package body HAL.SDCard is
 
    function Compute_Card_Block_Size
      (CSD       : Card_Specific_Data_Register;
-      Card_Type : Supported_SD_Memory_Cards) return Unsigned_32 is
+      Card_Type : Supported_SD_Memory_Cards) return Unsigned_32
+   is
    begin
       if Card_Type = Multimedia_Card
         or else CSD.CSD_Structure = 0
@@ -658,4 +696,4 @@ package body HAL.SDCard is
       end case;
    end Get_Transfer_Rate;
 
-end HAL.SDCard;
+end HAL.SDMMC;

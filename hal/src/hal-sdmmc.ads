@@ -1,7 +1,39 @@
+------------------------------------------------------------------------------
+--                                                                          --
+--                     Copyright (C) 2015-2017, AdaCore                     --
+--                                                                          --
+--  Redistribution and use in source and binary forms, with or without      --
+--  modification, are permitted provided that the following conditions are  --
+--  met:                                                                    --
+--     1. Redistributions of source code must retain the above copyright    --
+--        notice, this list of conditions and the following disclaimer.     --
+--     2. Redistributions in binary form must reproduce the above copyright --
+--        notice, this list of conditions and the following disclaimer in   --
+--        the documentation and/or other materials provided with the        --
+--        distribution.                                                     --
+--     3. Neither the name of the copyright holder nor the names of its     --
+--        contributors may be used to endorse or promote products derived   --
+--        from this software without specific prior written permission.     --
+--                                                                          --
+--   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS    --
+--   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT      --
+--   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR  --
+--   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT   --
+--   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, --
+--   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT       --
+--   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,  --
+--   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY  --
+--   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT    --
+--   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE  --
+--   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.   --
+--                                                                          --
+------------------------------------------------------------------------------
+
 with System;
 with Interfaces; use Interfaces;
 
-package HAL.SDCard is
+--  This package implements the SD and MMC card identification protocol.
+package HAL.SDMMC is
 
    type SD_Error is
      (OK,
@@ -276,39 +308,45 @@ package HAL.SDCard is
       Tfr : Tfr_Kind;
    end record;
 
-   type SDCard_Driver is limited interface;
+   type SDMMC_Driver is limited interface;
+
+   procedure Delay_Milliseconds
+     (This   : SDMMC_Driver;
+      Amount : Natural) is abstract;
+   --  Do not use directly 'delay until' so that this package can still be
+   --  used with the zfp profile
 
    procedure Reset
-     (This   : in out SDCard_Driver;
+     (This   : in out SDMMC_Driver;
       Status : out SD_Error) is abstract;
    --  Initialize the driver, enable clocking.
 
    procedure Set_Clock
-     (This : in out SDCard_Driver;
+     (This : in out SDMMC_Driver;
       Freq : Natural) is abstract;
    --  Set clock frequency.
 
    procedure Set_Bus_Size
-     (This : in out SDCard_Driver;
+     (This : in out SDMMC_Driver;
       Mode : Wide_Bus_Mode) is abstract;
    --  Set host bus size; the command must have been set to the card.
 
    procedure Send_Cmd
-     (This   : in out SDCard_Driver;
+     (This   : in out SDMMC_Driver;
       Cmd    : Cmd_Desc_Type;
       Arg    : Unsigned_32;
       Status : out SD_Error) is abstract;
    --  Send a command (without data transfer) and wait for result.
 
    procedure Send_Cmd
-     (This   : in out SDCard_Driver'Class;
+     (This   : in out SDMMC_Driver'Class;
       Cmd    : SD_Command;
       Arg    : Unsigned_32;
       Status : out SD_Error);
    --  Wrapper for Send_Cmd using a generic command.
 
    procedure Send_ACmd
-     (This   : in out SDCard_Driver'Class;
+     (This   : in out SDMMC_Driver'Class;
       Cmd    : SD_Specific_Command;
       Rca    : Unsigned_16;
       Arg    : Unsigned_32;
@@ -316,7 +354,7 @@ package HAL.SDCard is
    --  Send application specific command
 
    procedure Read_Cmd
-     (This   : in out SDCard_Driver;
+     (This   : in out SDMMC_Driver;
       Cmd    : Cmd_Desc_Type;
       Arg    : Unsigned_32;
       Buf    : System.Address;
@@ -325,25 +363,25 @@ package HAL.SDCard is
    --  Read data command
 
    procedure Read_Rsp48
-     (This : in out SDCard_Driver;
+     (This : in out SDMMC_Driver;
       Rsp  : out Unsigned_32) is abstract;
    --  Read the 32 interesting bits of the last 48bits response (start bit,
    --  transmission bit, command index, crc and end bit are discarded).
    --  Cannot fail.
 
    procedure Read_Rsp136
-     (This           : in out SDCard_Driver;
+     (This           : in out SDMMC_Driver;
       W0, W1, W2, W3 : out Unsigned_32) is abstract;
    --  Read the 128 interesting bits of the last 136 bit response.
    --  W0 is the MSB, W3 the LSB
    --  Cannot fail.
 
-   procedure Card_Identification_Process (Driver : in out SDCard_Driver'Class;
+   procedure Card_Identification_Process (This   : in out SDMMC_Driver'Class;
                                           Info   : out Card_Information;
                                           Status : out SD_Error);
    --  Generic card identification process procedure.
 
-   procedure Read_SCR (Driver : in out SDCard_Driver'Class;
+   procedure Read_SCR (This   : in out SDMMC_Driver'Class;
                        Info   : Card_Information;
                        SCR    : out SDCard_Configuration_Register;
                        Status : out SD_Error);
@@ -423,4 +461,4 @@ package HAL.SDCard is
 
    SD_MAX_VOLT_TRIAL           : constant := 16#0000_FFFF#;
 
-end HAL.SDCard;
+end HAL.SDMMC;
