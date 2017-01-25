@@ -366,7 +366,7 @@ package body STM32.SDMMC is
             Status := This.Response_R7_Error;
 
          when Rsp_Invalid =>
-            Status := HAL.SDMMC.Error;
+            Status := Error;
       end case;
    end Send_Cmd;
 
@@ -857,7 +857,7 @@ package body STM32.SDMMC is
       Ret : SD_Error;
    begin
       This.CLK_In    := SDMMC_CLK;
-      HAL.SDMMC.Card_Identification_Process (This, Info, Ret);
+      Card_Identification_Process (This, Info, Ret);
       This.Card_Type := Info.Card_Type;
       This.RCA       := Info.RCA;
 

@@ -32,8 +32,10 @@
 with System;
 with Interfaces; use Interfaces;
 
+with HAL;        use HAL;
+
 --  This package implements the SD and MMC card identification protocol.
-package HAL.SDMMC is
+package SDMMC is
 
    type SD_Error is
      (OK,
@@ -461,4 +463,4 @@ package HAL.SDMMC is
 
    SD_MAX_VOLT_TRIAL           : constant := 16#0000_FFFF#;
 
-end HAL.SDMMC;
+end SDMMC;

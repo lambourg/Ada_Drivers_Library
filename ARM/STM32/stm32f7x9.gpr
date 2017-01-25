@@ -1,5 +1,6 @@
 with "../../hal/config";
 with "../../hal/HAL";
+with "../../protocols/sdmmc";
 with "../cortex_m/cortex_m7";
 
 library project STM32F7x9 is

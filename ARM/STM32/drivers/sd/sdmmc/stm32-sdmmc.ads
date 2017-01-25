@@ -37,14 +37,14 @@
 
 with System;
 with STM32_SVD.SDMMC; use STM32_SVD.SDMMC;
-with HAL.SDMMC;       use HAL.SDMMC;
+with SDMMC;           use SDMMC;
 
 with STM32.DMA;
 
 package STM32.SDMMC is
 
    type SDMMC_Controller (Periph : access STM32_SVD.SDMMC.SDMMC_Peripheral) is
-   limited new HAL.SDMMC.SDMMC_Driver with private;
+   limited new SDMMC_Driver with private;
 
    function Initialize
      (This      : in out SDMMC_Controller;

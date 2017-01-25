@@ -38,7 +38,7 @@
 with System;
 with STM32_SVD.SDIO; use STM32_SVD.SDIO;
 
-with HAL.SDMMC;      use HAL.SDMMC;
+with SDMMC;          use SDMMC;
 
 with STM32.DMA;
 

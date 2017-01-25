@@ -1,5 +1,6 @@
 with "../../hal/config";
 with "../../hal/HAL";
+with "../../protocols/sdmmc";
 with "../cortex_m/cortex_m4f";
 
 library project STM32F46_79x is

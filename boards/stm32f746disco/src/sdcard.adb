@@ -34,7 +34,7 @@
 
 with Ada.Real_Time;           use Ada.Real_Time;
 
-with HAL.SDMMC;               use HAL.SDMMC;
+with SDMMC;                   use SDMMC;
 
 with STM32_SVD.RCC;           use STM32_SVD.RCC;
 

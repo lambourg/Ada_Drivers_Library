@@ -29,7 +29,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-package body HAL.SDMMC is
+package body SDMMC is
 
    procedure Convert_Card_Identification_Data_Register
      (W0, W1, W2, W3 : Unsigned_32;
@@ -696,4 +696,4 @@ package body HAL.SDMMC is
       end case;
    end Get_Transfer_Rate;
 
-end HAL.SDMMC;
+end SDMMC;
