@@ -344,7 +344,6 @@ package body STM32.DSI is
    begin
       --  Select the command mode by setting CMDM and DSIM bits
       This.Periph.DSI_MCR.CMDM := True;
-      This.Periph.DSI_WCFGR.DSIM := False;
       This.Periph.DSI_WCFGR.DSIM := True;
 
       --  Select the virtual channel for the LTDC interface traffic
