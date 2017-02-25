@@ -70,7 +70,8 @@ def gen_project(board, rts):
     cnt += '   for Library_Dir use "lib/" & Obj_Suffix;\n'
     cnt += '\n'
     cnt += '   for external ("Obj_Suffix") use Obj_Suffix;\n'
-    cnt += '   for external ("RTS") use RTS;\n'
+    if lower != 'native':
+        cnt += '   for external ("RTS") use RTS;\n'
     cnt += '   for Project_Files use (Board & "/board.gpr");\n'
     cnt += '\n'
     cnt += 'end %s;\n' % project_name

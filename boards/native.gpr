@@ -12,7 +12,6 @@ aggregate library project Native is
    for Library_Dir use "lib/" & Obj_Suffix;
 
    for external ("Obj_Suffix") use Obj_Suffix;
-   for external ("RTS") use RTS;
    for Project_Files use (Board & "/board.gpr");
 
 end Native;
