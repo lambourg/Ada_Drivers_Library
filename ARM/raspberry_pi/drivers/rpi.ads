@@ -39,8 +39,12 @@ package RPi is
    function To_BUS (Address : System.Address) return BUS_Address;
    function To_ARM (Address : BUS_Address) return System.Address;
 
+   subtype String2 is String (1 .. 2);
+   subtype String4 is String (1 .. 4);
    subtype String8 is String (1 .. 8);
 
+   function Image2 (V : Byte) return String2;
+   function Image4 (V : UInt16) return String4;
    function Image8 (V : UInt32) return String8;
    --  Utility function to display the hexadecimal value of V
 

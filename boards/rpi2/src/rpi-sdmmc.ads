@@ -29,56 +29,74 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Interfaces; use Interfaces;
+with System;
+with Interfaces;        use Interfaces;
 
-package body RPi is
+with HAL.Block_Drivers; use HAL.Block_Drivers;
+with SDMMC_Init;        use SDMMC_Init;
 
-   ------------
-   -- Image2 --
-   ------------
+package RPi.SDMMC is
 
-   function Image2 (V : Byte) return String2
-   is
-      Res        : String2;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
+   type SDCard_Driver is new SDMMC_Init.SDMMC_Driver
+     and HAL.Block_Drivers.Block_Driver with null record;
 
-      return Res;
-   end Image2;
+   Use_DMA : Boolean := True;
 
-   ------------
-   -- Image4 --
-   ------------
+   overriding procedure Delay_Milliseconds
+     (This   : SDCard_Driver;
+      Amount : Natural);
 
-   function Image4 (V : UInt16) return String4
-   is
-      Res        : String4;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
+   overriding procedure Reset
+     (This   : in out SDCard_Driver;
+      Status : out SD_Error);
 
-      return Res;
-   end Image4;
+   overriding procedure Set_Clock
+     (This : in out SDCard_Driver;
+      Freq : Natural);
 
-   ------------
-   -- Image8 --
-   ------------
+   overriding procedure Set_Bus_Size
+     (This : in out SDCard_Driver;
+      Mode : Wide_Bus_Mode);
 
-   function Image8 (V : UInt32) return String8
-   is
-      Res        : String8;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
+   overriding procedure Send_Cmd
+     (This : in out SDCard_Driver;
+      Cmd : Cmd_Desc_Type;
+      Arg : Unsigned_32;
+      Status : out SD_Error);
 
-      return Res;
-   end Image8;
+   overriding procedure Read_Cmd
+     (This : in out SDCard_Driver;
+      Cmd : Cmd_Desc_Type;
+      Arg : Unsigned_32;
+      Buf : System.Address;
+      Len : Unsigned_32;
+      Status : out SD_Error);
 
-end RPi;
+   overriding procedure Read_Rsp48
+     (This : in out SDCard_Driver;
+      Rsp : out Unsigned_32);
+
+   overriding procedure Read_Rsp136
+     (This : in out SDCard_Driver;
+      W0, W1, W2, W3 : out Unsigned_32);
+
+   procedure Initialize (Driver : in out SDCard_Driver;
+                         Info   : out Card_Information;
+                         Status : out SD_Error);
+
+   overriding function Read
+     (Controller   : in out SDCard_Driver;
+      Block_Number : Unsigned_64;
+      Data         : out HAL.Block_Drivers.Block) return Boolean;
+   --  Reads Data.
+
+   overriding function Write
+     (Controller   : in out SDCard_Driver;
+      Block_Number : Unsigned_64;
+      Data         : HAL.Block_Drivers.Block) return Boolean;
+   --  Writes Data.
+
+   --  The EMMC driver
+   EMMC_Driver : aliased SDCard_Driver;
+
+end RPi.SDMMC;

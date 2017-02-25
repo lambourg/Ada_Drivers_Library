@@ -40,7 +40,7 @@ package RPi.Regs is
    Mail_Base    : constant := Periphs_Base + 16#00_B880#;
    Clocks_Base  : constant := Periphs_Base + 16#10_1070#;
    GPIO_Base    : constant := Periphs_Base + 16#20_0000#;
-   UART_Base    : constant := Periphs_Base + 16#20_1000#; --  ??? 0x20100 from the doc
+   UART_Base    : constant := Periphs_Base + 16#20_1000#;
    PCM_Base     : constant := Periphs_Base + 16#20_3000#;
    BSC0_Base    : constant := Periphs_Base + 16#20_5000#;
    AUX_Base     : constant := Periphs_Base + 16#21_5000#;

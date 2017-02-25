@@ -29,56 +29,50 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Interfaces; use Interfaces;
+package RPi.Regs.MCI is
 
-package body RPi is
+   type Host_Config_Register is record
+      null;
+   end record;
 
-   ------------
-   -- Image2 --
-   ------------
+   type MCI_Peripheral is record
+      Command     : UInt32;
+      Argument    : UInt32;
+      Timeout     : UInt32;
+      Clk_Div     : UInt32;
+      Response_0  : UInt32;
+      Response_1  : UInt32;
+      Response_2  : UInt32;
+      Response_3  : UInt32;
+      Status      : UInt32;
 
-   function Image2 (V : Byte) return String2
-   is
-      Res        : String2;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
+      VDD         : UInt32;
+      EDM         : UInt32;
+      Host_Config : UInt32;
 
-      return Res;
-   end Image2;
+      HBCT        : UInt32;
+      Data        : UInt32;
+      HBLC        : UInt32;
+   end record with Volatile;
 
-   ------------
-   -- Image4 --
-   ------------
+   for MCI_Peripheral use record
+      Command     at 16#00# range 0 .. 31;
+      Argument    at 16#04# range 0 .. 31;
+      Timeout     at 16#08# range 0 .. 31;
+      Clk_Div     at 16#0C# range 0 .. 31;
+      Response_0  at 16#10# range 0 .. 31;
+      Response_1  at 16#14# range 0 .. 31;
+      Response_2  at 16#18# range 0 .. 31;
+      Response_3  at 16#1C# range 0 .. 31;
+      Status      at 16#20# range 0 .. 31;
 
-   function Image4 (V : UInt16) return String4
-   is
-      Res        : String4;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
+      VDD         at 16#30# range 0 .. 31;
+      EDM         at 16#34# range 0 .. 31;
+      Host_Config at 16#38# range 0 .. 31;
 
-      return Res;
-   end Image4;
+      HBCT        at 16#3C# range 0 .. 31;
+      Data        at 16#40# range 0 .. 31;
+      HBLC        at 16#50# range 0 .. 31;
+   end record;
 
-   ------------
-   -- Image8 --
-   ------------
-
-   function Image8 (V : UInt32) return String8
-   is
-      Res        : String8;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
-
-      return Res;
-   end Image8;
-
-end RPi;
+end RPi.Regs.MCI;

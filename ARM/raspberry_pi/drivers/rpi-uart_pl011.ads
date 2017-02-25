@@ -29,56 +29,26 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Interfaces; use Interfaces;
+package RPi.UART_PL011 is
 
-package body RPi is
+   type UART_Pins is
+     (P14_17,  --  TXD0: P14, RXD0: P15, CTS0: P16, RTS0: P17
+      P30_33,  --  TXD0: P32, RXD0: P33, CTS0: P30, RTS0: P31
+      P36_39); --  TXD0: P36, RXD0: P37, CTS0: P38, RTS0: P39
 
-   ------------
-   -- Image2 --
-   ------------
+   procedure Configure
+     (Pins       : UART_Pins;
+      UART_Clock : UInt32;
+      Baud_Rate  : UInt32);
+   --  Pins: the pins to route to the PL011
+   --  UART_Clock: the UART clock as defined by the Clock manager
 
-   function Image2 (V : Byte) return String2
-   is
-      Res        : String2;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
+   procedure Write (Data : Byte_Array);
 
-      return Res;
-   end Image2;
+   procedure Write (Data : Byte);
 
-   ------------
-   -- Image4 --
-   ------------
+   procedure Read (Data : out Byte_Array);
 
-   function Image4 (V : UInt16) return String4
-   is
-      Res        : String4;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
+   function Read return Byte;
 
-      return Res;
-   end Image4;
-
-   ------------
-   -- Image8 --
-   ------------
-
-   function Image8 (V : UInt32) return String8
-   is
-      Res        : String8;
-      Hex_Digits : constant array (0 .. 15) of Character := "0123456789abcdef";
-   begin
-      for I in Res'Range loop
-         Res (I) := Hex_Digits (Natural (Shift_Right (V, 4 * (8 - I)) and 15));
-      end loop;
-
-      return Res;
-   end Image8;
-
-end RPi;
+end RPi.UART_PL011;

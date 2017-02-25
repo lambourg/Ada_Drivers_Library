@@ -29,7 +29,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-package body SDMMC is
+package body SDMMC_Init is
 
    procedure Convert_Card_Identification_Data_Register
      (W0, W1, W2, W3 : Unsigned_32;
@@ -696,4 +696,4 @@ package body SDMMC is
       end case;
    end Get_Transfer_Rate;
 
-end SDMMC;
+end SDMMC_Init;
