@@ -150,7 +150,7 @@ package body Framebuffer_OTM8009A is
       --  Activate XRES active low
       Clear (LCD_XRES);
 
-      delay until Clock + Milliconds (20);
+      delay until Clock + Milliseconds (20);
 
       Set (LCD_XRES);
 
