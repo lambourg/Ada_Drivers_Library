@@ -31,7 +31,7 @@
 
 with Ada.Real_Time;           use Ada.Real_Time;
 
-with SDMMC;                   use SDMMC;
+with SDMMC_Init;              use SDMMC_Init;
 with STM32_SVD.RCC;           use STM32_SVD.RCC;
 
 with STM32.Device;            use STM32.Device;
@@ -237,7 +237,7 @@ package body SDCard is
 
    function Get_Card_Information
      (Controller : in out SDCard_Controller)
-      return SDMMC.Card_Information
+      return SDMMC_Init.Card_Information
    is
    begin
       Ensure_Card_Informations (Controller);

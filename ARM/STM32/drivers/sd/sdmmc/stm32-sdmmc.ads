@@ -37,7 +37,7 @@
 
 with System;
 with STM32_SVD.SDMMC; use STM32_SVD.SDMMC;
-with SDMMC;           use SDMMC;
+with SDMMC_Init;      use SDMMC_Init;
 
 with STM32.DMA;
 
