@@ -32,10 +32,11 @@ def gen_project(board, rts):
     cnt += '   Board := "%s";\n\n' % lower
 
     if BOARDS[board] is not None:
+        if len(BOARDS[board]) == 1:
+            # Only one rts defined for the board
+            rts = BOARDS[board][0]
         if rts is not None:
             cnt += '   RTS := "%s";\n' % rts
-        elif len(BOARDS[board]) == 1:
-            cnt += '   RTS := "%s";\n' % BOARDS[board][0]
         else:
             cnt += '   type RTS_Type is ("%s");\n' % \
                    '", "'.join(BOARDS[board])
@@ -69,12 +70,8 @@ def gen_project(board, rts):
     cnt += '   for Library_Dir use "lib/" & Obj_Suffix;\n'
     cnt += '\n'
     cnt += '   for external ("Obj_Suffix") use Obj_Suffix;\n'
-    if rts is not None:
-        cnt += '   for external ("RTS") use RTS;\n'
-    if lower == 'rpi3':
-        cnt += '   for Project_Files use ("rpi2/board.gpr");\n'
-    else:
-        cnt += '   for Project_Files use (Board & "/board.gpr");\n'
+    cnt += '   for external ("RTS") use RTS;\n'
+    cnt += '   for Project_Files use (Board & "/board.gpr");\n'
     cnt += '\n'
     cnt += 'end %s;\n' % project_name
 
