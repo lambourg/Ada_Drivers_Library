@@ -69,17 +69,18 @@ package STM32.LTDC is
      (BF_Constant_Alpha,
       BF_Pixel_Alpha_X_Constant_Alpha);
 
-   procedure Initialize (Width         : Positive;
-                         Height        : Positive;
-                         H_Sync        : Natural;
-                         H_Back_Porch  : Natural;
-                         H_Front_Porch : Natural;
-                         V_Sync        : Natural;
-                         V_Back_Porch  : Natural;
-                         V_Front_Porch : Natural;
-                         PLLSAI_N      : UInt9;
-                         PLLSAI_R      : UInt3;
-                         DivR          : Natural);
+   procedure Initialize
+     (Width         : Positive;
+      Height        : Positive;
+      H_Sync        : Natural;
+      H_Back_Porch  : Natural;
+      H_Front_Porch : Natural;
+      V_Sync        : Natural;
+      V_Back_Porch  : Natural;
+      V_Front_Porch : Natural;
+      PLLSAI_N      : UInt9;
+      PLLSAI_R      : UInt3;
+      DivR          : Natural);
 
    function Initialized return Boolean;
    procedure Start;
