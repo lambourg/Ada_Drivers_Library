@@ -55,8 +55,6 @@ package Rpi_Board is
 
    Display_Width  : constant := 800;
    Display_Height : constant := 480;
---     Display_Width  : constant := 1280;
---     Display_Height : constant := 800;
 
    function Sqrt (X : Float) return Float
      with Import, Convention => Intrinsic, External_Name => "__builtin_sqrtf";

@@ -102,8 +102,6 @@ package body RPi.DMA is
          end if;
 
          while not Device.CS.Ended loop
---             or else Device.CS.Active
---           loop
             null;
          end loop;
 
