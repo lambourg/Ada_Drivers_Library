@@ -56,7 +56,8 @@ package RPi.Bitmap is
       Y_Bg        : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean);
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True);
 
    overriding procedure Wait_Transfer (Buffer : RPi_Bitmap_Buffer);
 

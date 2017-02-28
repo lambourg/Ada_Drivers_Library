@@ -31,7 +31,11 @@
 
 with System;                   use System;
 with System.Storage_Elements;  use System.Storage_Elements;
+
 with Interfaces;               use Interfaces;
+pragma Warnings (Off);
+with Interfaces.Cache;         use Interfaces.Cache;
+pragma Warnings (On);
 
 with Rpi_Board;
 with RPi.DMA;                  use RPi.DMA;
@@ -210,7 +214,8 @@ package body RPi.Bitmap is
       Y_Bg        : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean)
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True)
    is
       pragma Unreferenced (X_Bg, Y_Bg);
       Src_Offset : constant Storage_Offset :=
@@ -238,6 +243,12 @@ package body RPi.Bitmap is
          raise Constraint_Error with "Not implemented yet.";
       end if;
 
+      if Clean_Cache then
+         Interfaces.Cache.Dcache_Flush_By_Range
+           (Src_Buffer.Addr,
+            Storage_Offset (Src_Buffer.Buffer_Size));
+      end if;
+
       loop
          Take_Transfer (DMA_Periph, 1, Status);
          exit when Status;
@@ -257,7 +268,7 @@ package body RPi.Bitmap is
           Source_Address      => To_BUS (Src_Buffer.Addr + Src_Offset),
           Destination_Address => To_BUS (Dst_Buffer.Addr + Dst_Offset),
           Transfer_Length     => (TD_Mode  => True,
-                                  X_Length => Unsigned_16 (Width * Dst_Buffer.BPP),
+                                  X_Length => UInt16 (Width * Dst_Buffer.BPP),
                                   Y_Length => UInt14 (Height - 1),
                                   others   => <>),
           Stride              => (S_STRIDE => Src_Stride,

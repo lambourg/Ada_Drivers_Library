@@ -209,7 +209,8 @@ package body STM32.DMA2D_Bitmap is
       Y_Bg        : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean)
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True)
    is
       use type System.Address;
       DMA_Buf_Src : constant DMA2D_Buffer := To_DMA2D_Buffer (Src_Buffer);
@@ -245,7 +246,9 @@ package body STM32.DMA2D_Bitmap is
          Y0_Bg := Bg_Buffer.Width - X_Bg - Width;
       end if;
 
-      Cortex_M.Cache.Clean_DCache (Src_Buffer.Addr, Src_Buffer.Buffer_Size);
+      if Clean_Cache then
+         Cortex_M.Cache.Clean_DCache (Src_Buffer.Addr, Src_Buffer.Buffer_Size);
+      end if;
 
       DMA2D_Copy_Rect
         (DMA_Buf_Src, X0_Src, Y0_Src,

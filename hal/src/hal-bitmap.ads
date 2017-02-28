@@ -176,7 +176,8 @@ package HAL.Bitmap is
       Y_Bg        : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean);
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True);
 
    procedure Copy_Rect
      (Src_Buffer  : Bitmap_Buffer'Class;
@@ -187,7 +188,8 @@ package HAL.Bitmap is
       Y_Dst       : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean);
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True);
 
    procedure Copy_Rect_Blend
      (Src_Buffer  : Bitmap_Buffer;
@@ -251,6 +253,13 @@ package HAL.Bitmap is
 
    procedure Wait_Transfer (Buffer : Bitmap_Buffer);
    --  Makes sure the DMA2D transfers are done
+
+   Null_Buffer : constant Bitmap_Buffer :=
+                   (System.Null_Address,
+                    0,
+                    0,
+                    RGB_888,
+                    False);
 
    Transparent         : constant Bitmap_Color := (000, 000, 000, 000);
    Dark_Red            : constant Bitmap_Color := (255, 139, 000, 000);

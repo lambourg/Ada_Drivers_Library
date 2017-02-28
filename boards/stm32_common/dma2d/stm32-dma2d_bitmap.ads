@@ -81,7 +81,8 @@ package STM32.DMA2D_Bitmap is
       Y_Bg        : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean)
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True)
      with Pre =>
        Dst_Buffer.Color_Mode in HAL.Bitmap.ARGB_8888 .. HAL.Bitmap.ARGB_4444;
 

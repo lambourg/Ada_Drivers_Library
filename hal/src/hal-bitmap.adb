@@ -399,10 +399,26 @@ package body HAL.Bitmap is
       Y_Bg        : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean)
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True)
    is
+      pragma Unreferenced (X_Bg, Y_Bg, Synchronous, Clean_Cache);
+      use type System.Address;
+      Col : Unsigned_32;
    begin
-      raise Constraint_Error with "Not implemented yet.";
+      if Bg_Buffer.Addr /= System.Null_Address then
+         raise Constraint_Error with "Not implemented yet.";
+      else
+         for dY in 0 .. Height - 1 loop
+            for dX in 0 .. Width - 1 loop
+               Col := Src_Buffer.Get_Pixel (X_Src + dX, Y_Src + dY);
+               Dst_Buffer.Set_Pixel
+                 (X     => X_Dst + dX,
+                  Y     => Y_Dst + dY,
+                  Value => Col);
+            end loop;
+         end loop;
+      end if;
    end Copy_Rect;
 
    ---------------
@@ -418,7 +434,8 @@ package body HAL.Bitmap is
       Y_Dst       : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean)
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True)
    is
       Null_Buffer : Bitmap_Buffer'Class := Src_Buffer;
    begin
@@ -439,7 +456,8 @@ package body HAL.Bitmap is
          Y_Bg        => 0,
          Width       => Width,
          Height      => Height,
-         Synchronous => Synchronous);
+         Synchronous => Synchronous,
+         Clean_Cache => Clean_Cache);
    end Copy_Rect;
 
    ---------------------
