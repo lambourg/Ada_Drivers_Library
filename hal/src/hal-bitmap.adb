@@ -465,22 +465,23 @@ package body HAL.Bitmap is
    ---------------------
 
    procedure Copy_Rect_Blend
-     (Src_Buffer  : Bitmap_Buffer;
+     (Src_Buffer  : Bitmap_Buffer'Class;
       X_Src       : Natural;
       Y_Src       : Natural;
-      Dst_Buffer  : Bitmap_Buffer'Class;
+      Dst_Buffer  : Bitmap_Buffer;
       X_Dst       : Natural;
       Y_Dst       : Natural;
       Width       : Natural;
       Height      : Natural;
-      Synchronous : Boolean)
+      Synchronous : Boolean;
+      Clean_Cache : Boolean := True)
    is
    begin
       Copy_Rect
-        (Src_Buffer  => Bitmap_Buffer'Class (Src_Buffer),
+        (Src_Buffer  => Src_Buffer,
          X_Src       => X_Src,
          Y_Src       => Y_Src,
-         Dst_Buffer  => Dst_Buffer,
+         Dst_Buffer  => Bitmap_Buffer'Class (Dst_Buffer),
          X_Dst       => X_Dst,
          Y_Dst       => Y_Dst,
          Bg_Buffer   => Dst_Buffer,
@@ -488,7 +489,8 @@ package body HAL.Bitmap is
          Y_Bg        => Y_Dst,
          Width       => Width,
          Height      => Height,
-         Synchronous => Synchronous);
+         Synchronous => Synchronous,
+         Clean_Cache => Clean_Cache);
    end Copy_Rect_Blend;
 
    ------------------------
