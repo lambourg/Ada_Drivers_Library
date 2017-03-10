@@ -209,7 +209,7 @@ package body STM32.DMA2D is
    begin
       DMA2D_Wait_Transfer_Int.all;
 
-      if Bg_Buffer /= Null_Buffer then
+      if Bg_Buffer.Addr /= System.Null_Address then
          --  PFC and blending
          DMA2D_Periph.CR.MODE := DMA2D_MODE'Enum_Rep (M2M_BLEND);
 
@@ -256,7 +256,7 @@ package body STM32.DMA2D is
                                others => <>);
       DMA2D_Periph.FGMAR   := To_Word (Src_Buffer.Addr) + Src_Off;
 
-      if Bg_Buffer /= Null_Buffer then
+      if Bg_Buffer.Addr /= System.Null_Address then
          declare
             Bg_Off  : constant UInt32 := Offset (Bg_Buffer, X_Bg, Y_Bg);
          begin
