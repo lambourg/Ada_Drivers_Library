@@ -444,31 +444,6 @@ package STM32_SVD.FSMC is
    end record;
 
    subtype SDCMR_MODE_Field is HAL.UInt3;
-
-   --  SDCMR_CTB array
-   type SDCMR_CTB_Field_Array is array (1 .. 2) of Boolean
-     with Component_Size => 1, Size => 2;
-
-   --  Type definition for SDCMR_CTB
-   type SDCMR_CTB_Field
-     (As_Array : Boolean := False)
-   is record
-      case As_Array is
-         when False =>
-            --  CTB as a value
-            Val : HAL.UInt2;
-         when True =>
-            --  CTB as an array
-            Arr : SDCMR_CTB_Field_Array;
-      end case;
-   end record
-     with Unchecked_Union, Size => 2;
-
-   for SDCMR_CTB_Field use record
-      Val at 0 range 0 .. 1;
-      Arr at 0 range 0 .. 1;
-   end record;
-
    subtype SDCMR_NRFS_Field is HAL.UInt4;
    subtype SDCMR_MRD_Field is HAL.UInt13;
 
@@ -477,7 +452,9 @@ package STM32_SVD.FSMC is
       --  Write-only. Command mode
       MODE           : SDCMR_MODE_Field := 16#0#;
       --  Write-only. Command target bank 2
-      CTB            : SDCMR_CTB_Field := (As_Array => False, Val => 16#0#);
+      CTB2           : Boolean := False;
+      --  Write-only. Command target bank 1
+      CTB1           : Boolean := False;
       --  Number of Auto-refresh
       NRFS           : SDCMR_NRFS_Field := 16#0#;
       --  Mode Register definition
@@ -490,7 +467,8 @@ package STM32_SVD.FSMC is
 
    for SDCMR_Register use record
       MODE           at 0 range 0 .. 2;
-      CTB            at 0 range 3 .. 4;
+      CTB2           at 0 range 3 .. 3;
+      CTB1           at 0 range 4 .. 4;
       NRFS           at 0 range 5 .. 8;
       MRD            at 0 range 9 .. 21;
       Reserved_22_31 at 0 range 22 .. 31;

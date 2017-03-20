@@ -569,30 +569,6 @@ package STM32_SVD.RTC is
 
    subtype CALR_CALM_Field is HAL.UInt9;
 
-   --  CALR_CALW array
-   type CALR_CALW_Field_Array is array (8 .. 9) of Boolean
-     with Component_Size => 1, Size => 2;
-
-   --  Type definition for CALR_CALW
-   type CALR_CALW_Field
-     (As_Array : Boolean := False)
-   is record
-      case As_Array is
-         when False =>
-            --  CALW as a value
-            Val : HAL.UInt2;
-         when True =>
-            --  CALW as an array
-            Arr : CALR_CALW_Field_Array;
-      end case;
-   end record
-     with Unchecked_Union, Size => 2;
-
-   for CALR_CALW_Field use record
-      Val at 0 range 0 .. 1;
-      Arr at 0 range 0 .. 1;
-   end record;
-
    --  calibration register
    type CALR_Register is record
       --  Calibration minus
@@ -600,7 +576,9 @@ package STM32_SVD.RTC is
       --  unspecified
       Reserved_9_12  : HAL.UInt4 := 16#0#;
       --  Use a 16-second calibration cycle period
-      CALW           : CALR_CALW_Field := (As_Array => False, Val => 16#0#);
+      CALW16         : Boolean := False;
+      --  Use an 8-second calibration cycle period
+      CALW8          : Boolean := False;
       --  Increase frequency of RTC by 488.5 ppm
       CALP           : Boolean := False;
       --  unspecified
@@ -612,7 +590,8 @@ package STM32_SVD.RTC is
    for CALR_Register use record
       CALM           at 0 range 0 .. 8;
       Reserved_9_12  at 0 range 9 .. 12;
-      CALW           at 0 range 13 .. 14;
+      CALW16         at 0 range 13 .. 13;
+      CALW8          at 0 range 14 .. 14;
       CALP           at 0 range 15 .. 15;
       Reserved_16_31 at 0 range 16 .. 31;
    end record;

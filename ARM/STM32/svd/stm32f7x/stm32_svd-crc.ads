@@ -50,7 +50,7 @@ package STM32_SVD.CRC is
    -- Peripherals --
    -----------------
 
-   --  Cryptographic processor
+   --  Cyclic Redundancy Check (CRC) unit
    type CRC_Peripheral is record
       --  Data register
       DR   : aliased HAL.UInt32;
@@ -73,7 +73,7 @@ package STM32_SVD.CRC is
       POL  at 16#10# range 0 .. 31;
    end record;
 
-   --  Cryptographic processor
+   --  Cyclic Redundancy Check (CRC) unit
    CRC_Periph : aliased CRC_Peripheral
      with Import, Address => System'To_Address (16#40023000#);
 
