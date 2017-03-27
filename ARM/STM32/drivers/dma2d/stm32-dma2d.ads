@@ -269,7 +269,8 @@ package STM32.DMA2D is
      with Pre => Buffer.Color_Mode in Output_Color_Mode;
    --  Draws a vertical line
 
-   procedure DMA2D_Wait_Transfer;
+   procedure DMA2D_Wait_Transfer
+     with Inline_Always;
    --  Makes sure the DMA2D transfers are done
 
 private
