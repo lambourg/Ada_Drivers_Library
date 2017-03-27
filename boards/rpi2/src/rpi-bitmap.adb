@@ -41,9 +41,86 @@ with Rpi_Board;
 with RPi.DMA;                  use RPi.DMA;
 with RPi.Regs.DMA;             use RPi.Regs.DMA;
 
+with Ada.Interrupts.Names;
+with GNAT.IO;
+
 package body RPi.Bitmap is
 
    DMA_Periph : DMA_Controller renames Rpi_Board.DMA_0;
+
+   protected DMA_Handler is
+      pragma Interrupt_Priority;
+
+      entry Wait;
+
+      procedure Set_Started;
+
+   private
+      procedure On_Interrupt;
+      pragma Attach_Handler
+        (On_Interrupt, Ada.Interrupts.Names.DMA0_Interrupt);
+
+      No_Transfer : Boolean := True;
+   end DMA_Handler;
+
+   protected body DMA_Handler is
+      ----------
+      -- Wait --
+      ----------
+
+      entry Wait when No_Transfer is
+      begin
+         null;
+      end Wait;
+
+      -----------------
+      -- Set_Started --
+      -----------------
+
+      procedure Set_Started is
+      begin
+         No_Transfer := False;
+      end Set_Started;
+
+      ------------------
+      -- On_Interrupt --
+      ------------------
+
+      procedure On_Interrupt
+      is
+      begin
+         --  Acknowledge the interrupt
+         DMA_Periph.Device.CS.Int := True;
+
+         if DMA_Periph.Device.CS.Error then
+            if DMA_Periph.Device.DEBUG.Read_Last_Not_Set_Error then
+               GNAT.IO.Put_Line ("!!! Read last not set error");
+               DMA_Periph.Device.DEBUG.Read_Last_Not_Set_Error := True;
+            elsif DMA_Periph.Device.DEBUG.FIFO_Error then
+               GNAT.IO.Put_Line ("!!! FIFO Error");
+               DMA_Periph.Device.DEBUG.FIFO_Error := True;
+            elsif DMA_Periph.Device.DEBUG.Read_Error then
+               GNAT.IO.Put_Line ("!!! Read Error");
+               DMA_Periph.Device.DEBUG.Read_Error := True;
+            else
+               GNAT.IO.Put_Line ("??? UNKNOWN Error");
+            end if;
+         else
+            No_Transfer := True;
+         end if;
+      end On_Interrupt;
+
+   end DMA_Handler;
+
+   -------------------
+   -- Wait_Transfer --
+   -------------------
+
+   procedure Wait_Transfer
+   is
+   begin
+      DMA_Handler.Wait;
+   end Wait_Transfer;
 
    -------------------
    -- Wait_Transfer --
@@ -54,7 +131,7 @@ package body RPi.Bitmap is
    is
       pragma Unreferenced (Buffer);
    begin
-      Wait_Transfer (DMA_Periph);
+      DMA_Handler.Wait;
    end Wait_Transfer;
 
    ---------
@@ -87,6 +164,7 @@ package body RPi.Bitmap is
       W, H        : Natural;
 
    begin
+      GNAT.IO.Put_Line ("??? Fill_Rect is still in-progress");
       if Width <= 0 or else Height <= 0 then
          return;
       end if;
@@ -127,7 +205,7 @@ package body RPi.Bitmap is
          Set_Control_Block
            (DMA_Periph,
             (TI =>
-                 (Interrupt_Enable => False,
+                 (Interrupt_Enable => True,
                   Two_D_Mode       => True,
                   Dest_Inc         => True,
                   Dest_Width       => Width_128bit,
@@ -257,7 +335,7 @@ package body RPi.Bitmap is
       Set_Control_Block
         (DMA_Periph,
          (TI                  =>
-              (Interrupt_Enable => False,
+              (Interrupt_Enable => True,
                Two_D_Mode       => True,
                Wait_Response    => True,
                Dest_Inc         => True,
@@ -276,10 +354,11 @@ package body RPi.Bitmap is
           others              => <>));
 
       --  Start the transfer
+      DMA_Handler.Set_Started;
       Start_Transfer (DMA_Periph);
 
       if Synchronous then
-         Wait_Transfer (DMA_Periph);
+         DMA_Handler.Wait;
       end if;
    end Copy_Rect;
 
