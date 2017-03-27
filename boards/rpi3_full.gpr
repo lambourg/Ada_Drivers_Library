@@ -1,9 +1,8 @@
-aggregate library project RPi3 is
+aggregate library project RPi3_Full is
 
    Board := "rpi3";
 
-   type RTS_Type is ("ravenscar-sfp", "ravenscar-full");
-   RTS : RTS_Type := external ("RTS", "ravenscar-sfp");
+   RTS := "ravenscar-full";
 
    type Build_Type is ("Debug", "Production");
    Build : Build_Type := external ("PLATFORM_BUILD", "Production");
@@ -20,4 +19,4 @@ aggregate library project RPi3 is
    for external ("RTS") use RTS;
    for Project_Files use (Board & "/board.gpr");
 
-end RPi3;
+end RPi3_Full;

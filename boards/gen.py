@@ -3,7 +3,7 @@
 BOARDS = {'Crazyflie': ['ravenscar-sfp', 'ravenscar-full'],
           'Native': None,
           'RPi2': ['ravenscar-sfp'],
-          'RPi3': ['ravenscar-sfp'],
+          'RPi3': ['ravenscar-sfp', 'ravenscar-full'],
           'OpenMV2': ['ravenscar-sfp', 'ravenscar-full'],
           'STM32F407Disco': ['ravenscar-sfp', 'ravenscar-full'],
           'STM32F429Disco': ['ravenscar-sfp', 'ravenscar-full'],
