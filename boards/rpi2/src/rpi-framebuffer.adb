@@ -121,7 +121,7 @@ package body RPi.Framebuffer is
       --  The bitmap API requires DMA0 to accelerate the transfers.
       --  Let's use a pretty large number of control blocks to allow chaining
       --  those operations
-      Initialize (Rpi_Board.DMA_0, 600);
+      Initialize (Rpi_Board.DMA_0, 100);
    end Initialize;
 
    -----------

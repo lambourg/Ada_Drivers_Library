@@ -116,8 +116,9 @@ private
 
       procedure Wait_Transfer;
 
-      procedure Take_Transfer (Num_Control_Blocks : Natural;
-                               Status             : out Boolean);
+      procedure Take_Transfer
+        (Num_Control_Blocks : Natural;
+         Status             : out Boolean);
 
       procedure Fill_Control_Block
         (CB : RPi.Regs.DMA.DMA_Control_Block);

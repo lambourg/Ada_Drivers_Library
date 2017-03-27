@@ -32,7 +32,8 @@
 with System.Storage_Elements;  use System.Storage_Elements;
 with Ada.Unchecked_Conversion;
 with Ada.Real_Time;            use Ada.Real_Time;
-with Ada.Text_IO;              use Ada.Text_IO;
+
+with GNAT.IO;
 
 with RPi.Regs.DMA;             use RPi.Regs.DMA;
 with RPi.Firmware.GPU_Memory;  use RPi.Firmware.GPU_Memory;
@@ -44,14 +45,17 @@ package body RPi.DMA is
    type SCB_Access is access all DMA_Control_Block;
 
    function SCB (Base  : System.Address;
-                 Index : SCB_Index) return access DMA_Control_Block;
+                 Index : SCB_Index) return SCB_Access;
+
+   function Get_Index (Base  : System.Address;
+                   Block : System.Address) return SCB_Index;
 
    ---------
    -- SCB --
    ---------
 
    function SCB (Base  : System.Address;
-                 Index : SCB_Index) return access DMA_Control_Block
+                 Index : SCB_Index) return SCB_Access
    is
       Offset : constant Storage_Offset :=
                  (Storage_Offset (Index - 1) * DMA_Control_Block'Size / 8);
@@ -60,6 +64,29 @@ package body RPi.DMA is
    begin
       return As_SCB (Base + Offset);
    end SCB;
+
+   -----------
+   -- Index --
+   -----------
+
+   function Get_Index (Base  : System.Address;
+                       Block : System.Address) return SCB_Index
+   is
+      Offset : Storage_Offset;
+      Idx    : Natural;
+   begin
+      Offset := (Block - Base) * 8;
+      Idx    := Integer (Offset) / DMA_Control_Block'Size;
+
+      return SCB_Index (Idx + 1);
+   exception
+      when others =>
+         GNAT.IO.Put_Line (Image8 (UInt32 (To_BUS (Base))));
+         GNAT.IO.Put_Line (Image8 (UInt32 (To_BUS (Block))));
+         loop
+            null;
+         end loop;
+   end Get_Index;
 
    --------------------
    -- DMA_Controller --
@@ -120,7 +147,7 @@ package body RPi.DMA is
       is
          Tail      : SCB_Index;
          Prev      : SCB_Index;
-         Next      : SCB_Index;
+         Next      : SCB_Index := 0;
       begin
          if New_Block /= 0 then
             --  Some other task is preparing a new DMA transfer. Cannot
@@ -130,31 +157,33 @@ package body RPi.DMA is
             return;
          end if;
 
-         loop
-            DMA_Find_Free_SCB (Tail, New_Block);
+         DMA_Find_Free_SCB (Tail, New_Block);
 
-            if New_Block /= 0 then
-               Prev := New_Block;
-               --  Check that enough blocks are available
-               for J in 2 .. Num_Control_Blocks loop
-                  if Prev = Num_SCB then
-                     Next := 1;
-                  else
-                     Next := Prev + 1;
-                  end if;
+         if New_Block /= 0 then
+            Prev := New_Block;
 
-                  if Device.CONBLK_AD =
-                    To_BUS (SCB (DMA_SCB, Next).all'Address)
-                  then
-                     --  Not enough room
-                     New_Block := 0;
-                     exit;
-                  end if;
-               end loop;
-            end if;
+            --  Check that enough blocks are available
+            for J in 2 .. Num_Control_Blocks loop
+               if Prev = Num_SCB then
+                  Next := 1;
+               else
+                  Next := Prev + 1;
+               end if;
 
-            exit when New_Block /= 0;
-         end loop;
+               if Device.CONBLK_AD =
+                 To_BUS (SCB (DMA_SCB, Next).all'Address)
+               then
+                  --  Not enough room
+                  New_Block := 0;
+                  exit;
+               end if;
+            end loop;
+         end if;
+
+         if New_Block = 0 then
+            Status := False;
+            return;
+         end if;
 
          --  Pause the transfer
          Device.CS.Active := False;
@@ -163,7 +192,9 @@ package body RPi.DMA is
          Prev := Tail;
 
          for J in 1 .. Num_Control_Blocks loop
-            if Prev = Num_SCB then
+            if Prev = 0 then
+               Next := 1;
+            elsif Prev = Num_SCB then
                Next := 1;
             else
                Next := Prev + 1;
@@ -182,6 +213,10 @@ package body RPi.DMA is
          --  Setup New_Block for use when calling Start_Transfer
          Current_Block := New_Block;
          Status        := True;
+
+      exception
+         when others =>
+            GNAT.IO.Put_Line ("!!! Exception in Take_Transfer");
       end Take_Transfer;
 
       ------------------------
@@ -193,9 +228,6 @@ package body RPi.DMA is
          Current : constant SCB_Access := SCB (DMA_SCB, Current_Block);
          Next    : constant BUS_Address := Current.Next_CB;
       begin
-         pragma Assert
-           (Current_Block /= 0,
-            "In Fill_Control_Block: no Control Block reserved");
          Current.all := CB;
 
          --  Set back the next block value
@@ -219,28 +251,13 @@ package body RPi.DMA is
          Constant_Src : UInt32)
       is
          Current : constant SCB_Access := SCB (DMA_SCB, Current_Block);
-         Next    : constant BUS_Address := Current.Next_CB;
       begin
-         pragma Assert
-           (Current_Block /= 0,
-            "In Fill_Control_Block: no Control Block reserved");
-         Current.all := CB;
-
-         --  Set back the next block value
-         Current.Next_CB := Next;
+         Fill_Control_Block (CB);
 
          --  Use Reserved_7 to hold the constant to be transfered
          Current.Reserved_7 := Constant_Src;
          Current.Source_Address :=
            To_BUS (Current.Reserved_7'Address);
-
-         if Next = 0 then
-            Current_Block := 0;
-         elsif Current_Block = Num_SCB then
-            Current_Block := 1;
-         else
-            Current_Block := Current_Block + 1;
-         end if;
       end Fill_Control_Block;
 
       --------------------
@@ -260,6 +277,7 @@ package body RPi.DMA is
 
          --  Start/resume the transfer
          Device.CS.Active := True;
+
          --  Reset New_Block
          New_Block := 0;
       end Start_Transfer;
@@ -276,18 +294,20 @@ package body RPi.DMA is
          Index         : SCB_Index;
          Next_Index    : SCB_Index;
          Transfering   : SCB_Index := 0;
+         Num           : Natural := 0;
 
       begin
          if Current_Block = 0 then
-            --  Easy case: no DMA transfer is active
+            --  Easy case: no DMA transfer is in progress
             Tail := 0;
             Available := 1;
 
             return;
          end if;
 
-         --  Transfer is currently in progress
-         Index := 1;
+         Transfering := Get_Index (DMA_SCB, To_ARM (Current_Block));
+         Index       := Transfering;
+
          loop
             if Index = Num_SCB then
                Next_Index := 1;
@@ -295,29 +315,23 @@ package body RPi.DMA is
                Next_Index := Index + 1;
             end if;
 
-            if Transfering = 0
-              and then To_BUS (SCB (DMA_SCB, Index).all'Address) = Current_Block
-            then
-               --  Found the block being transfered
-               Transfering := Index;
+            Num := Num + 1;
 
-            elsif Transfering /= 0 then
-               --  Search for the terminal block in the chain of transfers
-               if SCB (DMA_SCB, Index).Next_CB = 0 then
-                  --  Next block is unused
-                  --  But check that it's not the transfering block
-                  if Next_Index /= Transfering then
-                     --  return the values
-                     Tail := Index;
-                     Available := Next_Index;
-                  else
-                     --  all blocks are in use
-                     Tail := 0;
-                     Available := 0;
-                  end if;
+            if Next_Index = Transfering then
+               --  All blocks are in use
+               Tail := 0;
+               Available := 0;
 
-                  return;
-               end if;
+               return;
+            end if;
+
+            --  Search for the terminal block in the chain of transfers
+            if SCB (DMA_SCB, Index).Next_CB = 0 then
+               --  return the values
+               Tail := Index;
+               Available := Next_Index;
+
+               return;
             end if;
 
             --  Move on to the next block
@@ -350,14 +364,14 @@ package body RPi.DMA is
          Handle    => Handle);
 
       if Handle = Invalid_Memory_Handle then
-         Put_Line ("DNA: Cannot allocate GPU memory");
+         GNAT.IO.Put_Line ("DNA: Cannot allocate GPU memory");
       end if;
 
       Memory_Lock (Handle, BUS_Addr);
 
       if Debug then
-         Put_Line ("DMA SCBs BUS addr at 0x" &
-                     Image8 (UInt32 (BUS_Addr)));
+         GNAT.IO.Put_Line ("DMA SCBs BUS addr at 0x" &
+                             Image8 (UInt32 (BUS_Addr)));
       end if;
 
       Controller.Set_DMA_SCB (To_ARM (BUS_Addr), Total_Number_SCBs);
@@ -393,7 +407,7 @@ package body RPi.DMA is
       elsif Controller.Device = DMA_14'Access then
          DMA_Enable.Enable_14 := True;
       else
-         Put_Line ("Unknown DMA peripheral");
+         GNAT.IO.Put_Line ("Unknown DMA peripheral");
          raise Constraint_Error with "Unknown DMA periperal";
       end if;
 
@@ -417,6 +431,9 @@ package body RPi.DMA is
    is
    begin
       Controller.Take_Transfer (Num_Control_Blocks, Status);
+   exception
+      when others =>
+         GNAT.IO.Put_Line ("!!! Exception in Take_Transfer (procedure)");
    end Take_Transfer;
 
    -----------------------
