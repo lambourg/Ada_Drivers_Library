@@ -309,7 +309,33 @@ package RPi.Regs.DMA is
 
    subtype DMA_Control_Block_Address_Register is BUS_Address
      with Dynamic_Predicate =>
-       (DMA_Control_Block_Address_Register mod 256) = 0;
+       (DMA_Control_Block_Address_Register mod 32) = 0;
+
+   type DMA_Debug_Register is record
+      Read_Last_Not_Set_Error : Boolean := False;
+      FIFO_Error              : Boolean := False;
+      Read_Error              : Boolean := False;
+      Reserved_3_3            : Bit     := 0;
+      Outstanding_Writes      : UInt4   := 0;
+      DMA_ID                  : UInt8   := 0;
+      DMA_State               : UInt9   := 0;
+      Version                 : UInt3   := 0;
+      Lite                    : Boolean := False;
+      Reserved_29_31          : UInt3   := 0;
+   end record with Volatile_Full_Access, Size => 32;
+
+   for DMA_Debug_Register use record
+      Read_Last_Not_Set_Error at 0 range 0 .. 0;
+      FIFO_Error              at 0 range 1 .. 1;
+      Read_Error              at 0 range 2 .. 2;
+      Reserved_3_3            at 0 range 3 .. 3;
+      Outstanding_Writes      at 0 range 4 .. 7;
+      DMA_ID                  at 0 range 8 .. 15;
+      DMA_State               at 0 range 16 .. 24;
+      Version                 at 0 range 25 .. 27;
+      Lite                    at 0 range 28 .. 28;
+      Reserved_29_31          at 0 range 29 .. 31;
+   end record;
 
    type DMA_Peripheral is record
       CS        : DMA_Control_Status_Register; --  R/W
@@ -320,7 +346,7 @@ package RPi.Regs.DMA is
       TXFR_LEN  : DMA_Transfer_Length;
       STRIDE    : DMA_2D_Stride;
       NEXTCONB  : DMA_Control_Block_Address_Register;
-      DEBUG     : Unsigned_32; --  ??? TODO
+      DEBUG     : DMA_Debug_Register; --  ??? TODO
    end record with Volatile;
 
    for DMA_Peripheral use record
