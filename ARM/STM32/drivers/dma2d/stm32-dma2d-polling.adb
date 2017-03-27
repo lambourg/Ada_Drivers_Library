@@ -61,20 +61,22 @@ package body STM32.DMA2D.Polling is
          return;
       end if;
 
-      Transferring := False;
-
       if DMA2D_Periph.ISR.CEIF then --  Conf error
+         Transferring := False;
          raise Constraint_Error with "DMA2D Configuration error";
       elsif DMA2D_Periph.ISR.TEIF then -- Transfer error
+         Transferring := False;
          raise Constraint_Error with "DMA2D Transfer error";
       else
          while not DMA2D_Periph.ISR.TCIF loop --  Transfer completed
             if DMA2D_Periph.ISR.TEIF then
+               Transferring := False;
                raise Constraint_Error with "DMA2D Transfer error";
             end if;
          end loop;
 
          DMA2D_Periph.IFCR.CTCIF := True; --  Clear the TCIF flag
+         Transferring := False;
       end if;
    end DMA2D_Wait_Transfer;
 
