@@ -280,8 +280,6 @@ package body STM32.SDMMC is
      (This   : in out SDMMC_Controller;
       Freq   : Natural)
    is
-      use System.BB.Board_Parameters;
-
       Div : Unsigned_32;
    begin
       Div := (This.CLK_In + UInt32 (Freq) - 1) / UInt32 (Freq);

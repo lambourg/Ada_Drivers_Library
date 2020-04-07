@@ -10,4 +10,6 @@
 *.ci
 *.cswi
 *~
+*.stdout
+*.stderr
 gnatinspect*

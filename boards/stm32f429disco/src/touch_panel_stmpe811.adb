@@ -48,13 +48,10 @@ with STM32.GPIO;           use STM32.GPIO;
 with STM32.Device;         use STM32.Device;
 
 with HAL.Touch_Panel;      use HAL.Touch_Panel;
-with HAL.I2C;
 
 with STMPE811;             use STMPE811;
 
 package body Touch_Panel_STMPE811 is
-
-   use type HAL.I2C.I2C_Status;
 
    SCL      : GPIO_Point renames PA8;
    SCL_AF   : constant GPIO_Alternate_Function := GPIO_AF_4_I2C3;

@@ -42,7 +42,6 @@ with STM32.SDRAM;          use STM32.SDRAM;
 
 with STM32_SVD.DSI;        use STM32_SVD.DSI;
 with STM32_SVD.RCC;        use STM32_SVD.RCC;
-with STM32_SVD.LTDC;       use STM32_SVD.LTDC;
 
 package body Framebuffer_OTM8009A is
 

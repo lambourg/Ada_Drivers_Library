@@ -34,7 +34,7 @@
 with HAL;             use HAL;
 with HAL.I2C;         use HAL.I2C;
 with HAL.Touch_Panel; use HAL.Touch_Panel;
-with HAL.Time;        use HAL.Time;
+with HAL.Time;
 
 package FT5336 is
 

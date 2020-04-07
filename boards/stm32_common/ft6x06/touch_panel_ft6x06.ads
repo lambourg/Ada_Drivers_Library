@@ -72,6 +72,10 @@ package Touch_Panel_FT6x06 is
      (This        : in out Touch_Panel;
       Orientation : HAL.Framebuffer.Display_Orientation);
 
+   procedure Enable_Interrupts
+     (This        : in out Touch_Panel;
+      Enable      : Boolean);
+
 private
 
    type Touch_Panel is limited new FT6x06.FT6x06_Device

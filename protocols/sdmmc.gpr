@@ -1,4 +1,4 @@
-with "config";
+with "../hal/config";
 with "../hal/HAL";
 
 library project SDMMC is
