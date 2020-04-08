@@ -56,6 +56,10 @@ package Touch_Panel_STMPE811 is
      (This        : in out Touch_Panel;
       Orientation : HAL.Framebuffer.Display_Orientation);
 
+   procedure Enable_Interrupts
+     (This    : in out Touch_Panel;
+      Enabled : Boolean);
+
 private
 
    TP_I2C   : STM32.I2C.I2C_Port renames STM32.Device.I2C_3;

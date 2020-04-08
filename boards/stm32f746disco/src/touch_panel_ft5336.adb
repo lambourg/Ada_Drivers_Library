@@ -40,7 +40,6 @@ with STM32.Board;          use STM32.Board;
 with STM32.Device;         use STM32.Device;
 with STM32.EXTI;           use STM32.EXTI;
 with STM32.GPIO;           use STM32.GPIO;
-with FT5336;               use FT5336;
 
 package body Touch_Panel_FT5336 is
 
@@ -121,5 +120,17 @@ package body Touch_Panel_FT5336 is
                              Invert_Y or Swap_XY);
       end case;
    end Set_Orientation;
+
+   -----------------------
+   -- Enable_Interrupts --
+   -----------------------
+
+   procedure Enable_Interrupts
+     (This    : in out Touch_Panel;
+      Enabled : Boolean)
+   is
+   begin
+      This.Set_Use_Interrupts (Enabled);
+   end Enable_Interrupts;
 
 end Touch_Panel_FT5336;

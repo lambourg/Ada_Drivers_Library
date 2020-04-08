@@ -160,4 +160,16 @@ package body Touch_Panel_STMPE811 is
       end case;
    end Set_Orientation;
 
+   -----------------------
+   -- Enable_Interrupts --
+   -----------------------
+
+   procedure Enable_Interrupts
+     (This    : in out Touch_Panel;
+      Enabled : Boolean)
+   is
+   begin
+      This.Set_Use_Interrupts (Enabled);
+   end Enable_Interrupts;
+
 end Touch_Panel_STMPE811;
